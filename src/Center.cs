@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -10,12 +10,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
-using System.Xml;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
-class Space {public string name{get;set;} public string label{get;set;} public int monitor{get;set;}}
+class Space {
+    public string name{get;set;} public string label{get;set;} public int monitor{get;set;}
+    [ScriptIgnore] public string shortcut{get{return "Alt+"+name;}}
+    [ScriptIgnore] public int displayMonitor{get{return monitor+1;}set{monitor=value-1;}}
+}
 class Settings {
     public string[] components{get;set;} public bool autostart{get;set;} public bool hideTaskbar{get;set;} public bool cursor{get;set;}
     public string browser{get;set;} public Space[] workspaces{get;set;} public string feed{get;set;} public bool checkAtLogon{get;set;}
@@ -24,7 +27,8 @@ class Center {
     static string root;
     static JavaScriptSerializer json=new JavaScriptSerializer(){MaxJsonLength=16000000};
     Window window;TextBlock status,version,update,health;TextBox feed,browser;DataGrid spaces;
-    CheckBox desktop,files,borders,auto,hide,cursor,check;StackPanel actions;ListBox backups,conflicts;Dictionary<string,object> latest;
+    CheckBox desktop,files,borders,auto,hide,cursor,check;Grid actions;ListBox backups,conflicts;Dictionary<string,object> latest;
+    bool loading,dirty,busy,closingAllowed;int monitors=1;string savedFeed="";
     List<Dictionary<string,object>> conflictFiles=new List<Dictionary<string,object>>();
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     static string Quote(string s){return "\""+s.Replace("\"","")+"\"";}
@@ -39,24 +43,55 @@ class Center {
         return result;
     }
     T Get<T>(string name) where T:FrameworkElement{return (T)window.FindName(name);}
-    Button Button(string title,Func<Task> click,Panel parent) {var b=new Button{Content=title};b.Click+=async(s,e)=>await Busy(click);parent.Children.Add(b);return b;}
-    async Task Busy(Func<Task> f){actions.IsEnabled=false;status.Text="Выполняется…";try{await f();status.Text="Готово";}catch(Exception e){status.Text=e.Message;MessageBox.Show(window,e.Message,"Rose Pine Desktop",MessageBoxButton.OK,MessageBoxImage.Information);}finally{actions.IsEnabled=true;}}
+    void Bind(string name,Func<Task> click){Get<Button>(name).Click+=async(s,e)=>await Busy(click);}
+    void Say(string text,bool error=false){status.Text=text;status.Foreground=(Brush)window.Resources[error?"ErrorBrush":"StatusBrush"];}
+    async Task Busy(Func<Task> f){
+        busy=true;actions.IsEnabled=false;Get<ProgressBar>("Progress").Visibility=Visibility.Visible;Say("Выполняется…");
+        try{await f();if(status.Text=="Выполняется…")Say("Готово");}
+        catch(Exception e){Say(e.Message,true);}
+        finally{busy=false;actions.IsEnabled=true;Get<ProgressBar>("Progress").Visibility=Visibility.Collapsed;}
+    }
+    void Changed(){if(loading)return;dirty=true;Get<Button>("SaveSettings").IsEnabled=true;Get<TextBlock>("SettingsState").Text="Есть несохранённые изменения";Get<TextBlock>("SettingsState").Foreground=new SolidColorBrush(Color.FromRgb(246,193,119));}
+    void Clean(){dirty=false;Get<Button>("SaveSettings").IsEnabled=false;Get<TextBlock>("SettingsState").Text="Все изменения сохранены";Get<TextBlock>("SettingsState").Foreground=new SolidColorBrush(Color.FromRgb(144,140,170));}
+    void SourceChanged(){
+        Get<Button>("SaveSource").IsEnabled=feed.Text.Trim()!=savedFeed;
+        Get<TextBlock>("SourceStatus").Text=feed.Text.Trim()!=savedFeed?"Источник изменён. Сохрани его перед проверкой обновлений.":savedFeed.Length==0?"Источник не подключён. Укажи адрес выпуска или выбери локальный манифест.":"Используется сохранённый источник. Можно проверить наличие обновлений.";
+        Get<Button>("CheckUpdates").IsEnabled=feed.Text.Trim()==savedFeed;
+        Get<Button>("InstallUpdate").IsEnabled=feed.Text.Trim()==savedFeed&&latest!=null&&latest.ContainsKey("available")&&Equals(latest["available"],true);
+    }
+    void BrowserLabel(){Get<TextBlock>("BrowserLabel").Text=browser.Text.Length==0?"Системный браузер":Path.GetFileNameWithoutExtension(browser.Text);}
     void LoadSettings(){
-        var s=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));
+        loading=true;var s=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));
         desktop.IsChecked=Array.IndexOf(s.components,"desktop")>=0;files.IsChecked=Array.IndexOf(s.components,"files")>=0;borders.IsChecked=Array.IndexOf(s.components,"borders")>=0;
         auto.IsChecked=s.autostart;hide.IsChecked=s.hideTaskbar;cursor.IsChecked=s.cursor;check.IsChecked=s.checkAtLogon;
-        browser.Text=s.browser;feed.Text=s.feed;spaces.ItemsSource=new ObservableCollection<Space>(s.workspaces);
+        browser.Text=s.browser;savedFeed=s.feed??"";feed.Text=savedFeed;spaces.ItemsSource=new ObservableCollection<Space>(s.workspaces);
+        loading=false;Clean();BrowserLabel();SourceChanged();
     }
-    async Task Refresh(){var s=await Run("Status","");version.Text="Установлена версия "+s["version"]+" · мониторов: "+s["monitors"];backups.ItemsSource=(IEnumerable)s["backups"];conflicts.Items.Clear();conflictFiles.Clear();foreach(var c in (IEnumerable)s["conflicts"]){var d=(Dictionary<string,object>)c;conflictFiles.Add(d);conflicts.Items.Add((string)d["target"]+"\nНовая версия: "+d["incoming"]);}foreach(var m in (IEnumerable)s["modified"])conflicts.Items.Add("Изменён вручную: "+m);if(s.ContainsKey("checks")){int total=0;var missing=new List<string>();foreach(Dictionary<string,object> item in (IEnumerable)s["checks"]){total++;if(!Equals(item["exists"],true))missing.Add((string)item["name"]);}health.Text=missing.Count==0?"Файлы компонентов найдены: "+total:"Отсутствуют файлы: "+String.Join(", ",missing);}}
+    async Task Refresh(){
+        var s=await Run("Status","");version.Text="Версия "+s["version"];monitors=Convert.ToInt32(s["monitors"]);
+        Get<TextBlock>("MonitorHint").Text=monitors==1?"Доступен один монитор. Все пространства открываются на нём. Названия редактируются двойным щелчком.":"Мониторов: "+monitors+". Укажи номер от 1 до "+monitors+". Названия редактируются двойным щелчком.";
+        backups.Items.Clear();var names=new List<string>();foreach(string name in (IEnumerable)s["backups"])names.Add(name);names.Sort(StringComparer.Ordinal);names.Reverse();foreach(string backup in names){
+            string label=backup;var match=Regex.Match(backup,@"(\d{8})-(\d{6})");DateTime date;
+            if(match.Success&&DateTime.TryParseExact(match.Groups[1].Value+match.Groups[2].Value,"yyyyMMddHHmmss",System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out date))label=date.ToString("dd.MM.yyyy · HH:mm:ss")+(backup.StartsWith("migration")?" · До переноса":" · Перед изменениями");
+            backups.Items.Add(new ListBoxItem{Content=label,Tag=backup,ToolTip=backup});
+        }
+        Get<TextBlock>("BackupsEmpty").Visibility=backups.Items.Count==0?Visibility.Visible:Visibility.Collapsed;
+        conflicts.Items.Clear();conflictFiles.Clear();foreach(var c in (IEnumerable)s["conflicts"]){var d=(Dictionary<string,object>)c;conflictFiles.Add(d);conflicts.Items.Add(new ListBoxItem{Content="Конфликт: "+Path.GetFileName((string)d["target"]),ToolTip=(string)d["target"]});}
+        foreach(string m in (IEnumerable)s["modified"])conflicts.Items.Add(new ListBoxItem{Content="Ручные правки: "+Path.GetFileName(m),ToolTip=m});
+        Get<TextBlock>("ConflictsEmpty").Visibility=conflicts.Items.Count==0?Visibility.Visible:Visibility.Collapsed;
+        Get<Button>("Compare").IsEnabled=false;
+        if(s.ContainsKey("checks")){int total=0;var missing=new List<string>();foreach(Dictionary<string,object> item in (IEnumerable)s["checks"]){total++;if(!Equals(item["exists"],true))missing.Add((string)item["name"]);}health.Text=missing.Count==0?"Все необходимые файлы на месте · проверено: "+total:"Не найдены файлы: "+String.Join(", ",missing);}
+        if(latest==null)Get<TextBlock>("UpdateTitle").Text=savedFeed.Length==0?"Источник не подключён":"Можно проверить обновления";
+        SourceChanged();
+    }
     Task Compare(){
-        if(conflictFiles.Count==0){Process.Start("explorer.exe",Quote(Path.Combine(root,"conflicts")));return Task.FromResult(0);}
-        int index=Math.Max(0,Math.Min(conflicts.SelectedIndex,conflictFiles.Count-1));var item=conflictFiles[index];
+        int index=conflicts.SelectedIndex;if(index<0||index>=conflictFiles.Count)return Task.FromResult(0);var item=conflictFiles[index];
         var panel=new Grid();panel.ColumnDefinitions.Add(new ColumnDefinition());panel.ColumnDefinitions.Add(new ColumnDefinition());
         for(int i=0;i<2;i++){string path=(string)item[i==0?"target":"incoming"];var box=new TextBox{Text=(i==0?"Текущий файл: ":"Новый файл: ")+path+"\r\n\r\n"+(File.Exists(path)?File.ReadAllText(path):"Файл отсутствует"),IsReadOnly=true,AcceptsReturn=true,HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,FontFamily=new FontFamily("Consolas"),Background=new SolidColorBrush(Color.FromRgb(38,35,58)),Foreground=Brushes.White,Margin=new Thickness(6)};Grid.SetColumn(box,i);panel.Children.Add(box);}
-        new Window{Owner=window,Title="Сравнение конфигов",Width=1100,Height=650,Content=panel,Background=new SolidColorBrush(Color.FromRgb(25,23,36))}.Show();return Task.FromResult(0);
+        new Window{Owner=window,Title="Сравнение конфигов",Width=1100,Height=650,Content=panel,Resources=window.Resources,Background=new SolidColorBrush(Color.FromRgb(25,23,36))}.Show();return Task.FromResult(0);
     }
     void ChooseBrowser(Button button){
-        var menu=new ContextMenu{PlacementTarget=button};var system=new MenuItem{Header="Системный браузер"};system.Click+=(s,e)=>browser.Text="";menu.Items.Add(system);
+        var menu=new ContextMenu{PlacementTarget=button,Resources=window.Resources};var system=new MenuItem{Header="Системный браузер"};system.Click+=(s,e)=>browser.Text="";menu.Items.Add(system);
         var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach(var hive in new[]{RegistryHive.CurrentUser,RegistryHive.LocalMachine})foreach(var view in new[]{RegistryView.Registry64,RegistryView.Registry32}){
             using(var basis=RegistryKey.OpenBaseKey(hive,view))using(var clients=basis.OpenSubKey(@"Software\Clients\StartMenuInternet")){
@@ -70,53 +105,59 @@ class Center {
         menu.Items.Add(new Separator());var other=new MenuItem{Header="Выбрать файл приложения…"};other.Click+=(s,e)=>{var dialog=new OpenFileDialog{Filter="Приложение|*.exe"};if(dialog.ShowDialog(window)==true)browser.Text=dialog.FileName;};menu.Items.Add(other);menu.IsOpen=true;
     }
     async Task Save(){
-        spaces.CommitEdit(DataGridEditingUnit.Cell,true);spaces.CommitEdit(DataGridEditingUnit.Row,true);
+        if(!spaces.CommitEdit(DataGridEditingUnit.Cell,true)||!spaces.CommitEdit(DataGridEditingUnit.Row,true))throw new Exception("Проверь значения в таблице рабочих пространств.");
         var components=new List<string>();if(desktop.IsChecked==true)components.Add("desktop");if(files.IsChecked==true)components.Add("files");if(borders.IsChecked==true)components.Add("borders");
         if(components.Count==0)throw new Exception("Выбери хотя бы один компонент");
         if(browser.Text.Length>0&&!File.Exists(browser.Text))throw new Exception("Файл браузера не найден");
-        var rows=(ObservableCollection<Space>)spaces.ItemsSource;foreach(var row in rows){if(String.IsNullOrWhiteSpace(row.label)||row.label.Contains("\n"))throw new Exception("Укажи название рабочего пространства");}
-        var s=new Settings{components=components.ToArray(),autostart=auto.IsChecked==true,hideTaskbar=hide.IsChecked==true,cursor=cursor.IsChecked==true,checkAtLogon=check.IsChecked==true,browser=browser.Text,feed=feed.Text,workspaces=new List<Space>(rows).ToArray()};
+        var rows=(ObservableCollection<Space>)spaces.ItemsSource;foreach(var row in rows){if(String.IsNullOrWhiteSpace(row.label)||row.label.Contains("\n"))throw new Exception("Укажи название рабочего пространства");if(row.monitor<0||row.monitor>=monitors)throw new Exception("Номер монитора должен быть от 1 до "+monitors);}
+        var s=new Settings{components=components.ToArray(),autostart=auto.IsChecked==true,hideTaskbar=hide.IsChecked==true,cursor=cursor.IsChecked==true,checkAtLogon=check.IsChecked==true,browser=browser.Text,feed=savedFeed,workspaces=new List<Space>(rows).ToArray()};
+        await ApplySettings(s);Clean();Say("Настройки сохранены. Новые параметры терминала применятся при следующем запуске.");
+    }
+    async Task ApplySettings(Settings s){
         var request=Path.Combine(root,"requests","settings-"+Guid.NewGuid().ToString("N")+".json");Directory.CreateDirectory(Path.GetDirectoryName(request));File.WriteAllText(request,json.Serialize(s));
         try{await Run("Apply","-SettingsFile "+Quote(request));await Run("Start","");await Refresh();}finally{File.Delete(request);}
-        status.Text="Настройки сохранены. Уже открытые терминалы используют прежние параметры до следующего запуска.";
     }
-    async Task Check(){latest=await Run("Check","");update.Text=(string)latest["message"];if(latest.ContainsKey("notes"))update.Text+="\n\n"+(string)latest["notes"];}
+    async Task SaveSource(){
+        string source=feed.Text.Trim();Uri address;
+        if(source.Length>0&&!Path.IsPathRooted(source)&&(!Uri.TryCreate(source,UriKind.Absolute,out address)||address.Scheme!="https"))throw new Exception("Укажи HTTPS-адрес манифеста или полный путь к локальному файлу.");
+        if(Path.IsPathRooted(source)&&!File.Exists(source))throw new Exception("Локальный манифест не найден. Проверь путь или выбери файл.");
+        var s=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));s.feed=source;await ApplySettings(s);savedFeed=s.feed;latest=null;SourceChanged();
+        update.Text=savedFeed.Length==0?"Подключи источник выпусков, чтобы получать обновления.":"Источник сохранён. Проверь наличие обновлений.";
+        Get<TextBlock>("UpdateTitle").Text=savedFeed.Length==0?"Источник не подключён":"Источник настроен";Say("Источник обновлений сохранён.");
+    }
+    async Task Check(){
+        latest=null;Get<Button>("InstallUpdate").IsEnabled=false;latest=await Run("Check","");bool available=Equals(latest["available"],true);
+        Get<TextBlock>("UpdateTitle").Text=available?"Доступна версия "+latest["version"]:savedFeed.Length==0?"Источник не подключён":"Установлена актуальная версия";
+        update.Text=(string)latest["message"];if(latest.ContainsKey("notes"))update.Text+="\n\n"+(string)latest["notes"];SourceChanged();
+    }
+    bool Confirm(string title,string text,string action,bool danger){
+        var panel=new StackPanel{Margin=new Thickness(26)};panel.Children.Add(new TextBlock{Text=title,FontSize=22,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,0,0,14)});panel.Children.Add(new TextBlock{Text=text,TextWrapping=TextWrapping.Wrap});
+        var buttons=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(0,20,0,0)};panel.Children.Add(buttons);
+        var dialog=new Window{Owner=window,Title=title,Width=520,SizeToContent=SizeToContent.Height,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,Background=window.Background,Foreground=window.Foreground,FontFamily=window.FontFamily,FontSize=14,Resources=window.Resources,Content=panel};
+        var cancel=new Button{Content="Отмена",IsCancel=true};var accept=new Button{Content=action,Style=(Style)window.Resources[danger?"Danger":"Primary"]};cancel.Click+=(s,e)=>dialog.DialogResult=false;accept.Click+=(s,e)=>dialog.DialogResult=true;buttons.Children.Add(cancel);buttons.Children.Add(accept);cancel.Focus();
+        dialog.SourceInitialized+=(s,e)=>{int dark=1;DwmSetWindowAttribute(new WindowInteropHelper(dialog).Handle,20,ref dark,4);};return dialog.ShowDialog()==true;
+    }
     void Build(bool autoRefresh=true){
-        string xaml=@"<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' Title='Rose Pine Desktop' Width='840' Height='690' MinWidth='720' MinHeight='580' Background='#191724' Foreground='#e0def4' WindowStartupLocation='CenterScreen' FontFamily='Segoe UI' FontSize='14'>
-<Window.Resources>
-<Style TargetType='Button'><Setter Property='Margin' Value='0,6,10,6'/><Setter Property='Padding' Value='15,9'/><Setter Property='Background' Value='#26233a'/><Setter Property='Foreground' Value='#e0def4'/><Setter Property='BorderBrush' Value='#524f67'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='Button'><Border x:Name='b' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='1' CornerRadius='8' Padding='{TemplateBinding Padding}'><ContentPresenter HorizontalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='b' Property='Background' Value='#403852'/></Trigger><Trigger Property='IsEnabled' Value='False'><Setter TargetName='b' Property='Opacity' Value='.45'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-<Style TargetType='TextBox'><Setter Property='Background' Value='#26233a'/><Setter Property='Foreground' Value='#e0def4'/><Setter Property='CaretBrush' Value='#e0def4'/><Setter Property='BorderBrush' Value='#524f67'/><Setter Property='Padding' Value='8'/><Setter Property='Margin' Value='0,5,0,10'/></Style>
-<Style TargetType='CheckBox'><Setter Property='Foreground' Value='#e0def4'/><Setter Property='Margin' Value='0,7,15,7'/></Style>
-<Style TargetType='TabItem'><Setter Property='Foreground' Value='#e0def4'/><Setter Property='Padding' Value='16,10'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='TabItem'><Border x:Name='b' Padding='{TemplateBinding Padding}' Background='#26233a' CornerRadius='7,7,0,0' Margin='0,0,3,0'><ContentPresenter ContentSource='Header'/></Border><ControlTemplate.Triggers><Trigger Property='IsSelected' Value='True'><Setter TargetName='b' Property='Background' Value='#403852'/><Setter Property='Foreground' Value='#c4a7e7'/></Trigger><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='b' Property='Background' Value='#403852'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-<Style TargetType='ListBox'><Setter Property='Background' Value='#26233a'/><Setter Property='Foreground' Value='#e0def4'/><Setter Property='BorderBrush' Value='#524f67'/></Style>
-</Window.Resources>
-<Grid Margin='26'><Grid.RowDefinitions><RowDefinition Height='Auto'/><RowDefinition Height='*'/><RowDefinition Height='Auto'/></Grid.RowDefinitions>
-<StackPanel Margin='0,0,0,20'><TextBlock Text='Rose Pine Desktop' FontSize='30' FontWeight='SemiBold' Foreground='#c4a7e7'/><TextBlock x:Name='Version' Margin='0,5,0,0'/></StackPanel>
-<StackPanel x:Name='Actions' Grid.Row='1'><TabControl x:Name='Tabs' Background='#191724' BorderBrush='#403d52' Height='470'>
-<TabItem Header='Обновления'><StackPanel Margin='18'><TextBlock x:Name='Update' Text='Нажми «Проверить обновления».' TextWrapping='Wrap' Height='155'/><WrapPanel x:Name='UpdateButtons'/><TextBlock Text='Источник обновлений: HTTPS-манифест или локальный файл' Margin='0,16,0,0'/><TextBox x:Name='Feed'/><TextBlock Text='Адрес начнёт использоваться после сохранения настроек.' Foreground='#908caa'/></StackPanel></TabItem>
-<TabItem Header='Настройки'><ScrollViewer VerticalScrollBarVisibility='Auto'><StackPanel Margin='18'>
-<WrapPanel><CheckBox x:Name='Desktop' Content='Окна и панель'/><CheckBox x:Name='Files' Content='Yazi и терминал'/><CheckBox x:Name='Borders' Content='Обводки'/></WrapPanel>
-<CheckBox x:Name='Auto' Content='Запускать окружение при входе'/><CheckBox x:Name='Check' Content='Проверять обновления при входе'/><CheckBox x:Name='Hide' Content='Скрывать панель Windows, переключать клавишей Win'/><CheckBox x:Name='Cursor' Content='Курсор Bibata Modern Ice'/>
-<TextBlock Text='Браузер: пустое поле — системный'/><DockPanel><Button x:Name='Browse' Content='Выбрать…' DockPanel.Dock='Right'/><TextBox x:Name='Browser'/></DockPanel>
-<TextBlock Text='Рабочие пространства · монитор 0 — основной, 1 — второй' Margin='0,8,0,8'/>
-<DataGrid x:Name='Spaces' AutoGenerateColumns='False' CanUserAddRows='False' CanUserDeleteRows='False' Height='180' Foreground='#191724' Background='#e0def4'><DataGrid.Columns><DataGridTextColumn Header='Клавиша Alt+' Binding='{Binding name}' IsReadOnly='True'/><DataGridTextColumn Header='Название' Binding='{Binding label}' Width='*'/><DataGridTextColumn Header='Монитор' Binding='{Binding monitor}' Width='90'/></DataGrid.Columns></DataGrid><WrapPanel x:Name='SettingsButtons'/>
-</StackPanel></ScrollViewer></TabItem>
-<TabItem Header='Восстановление'><ScrollViewer VerticalScrollBarVisibility='Auto'><StackPanel Margin='18'><WrapPanel x:Name='RecoveryButtons'/><TextBlock x:Name='Health' TextWrapping='Wrap' Foreground='#9ccfd8' Margin='0,10'/><TextBlock Text='Резервные копии' Margin='0,10'/><ListBox x:Name='Backups' Height='85'/><TextBlock Text='Ручные изменения и конфликты' Margin='0,10'/><ListBox x:Name='Conflicts' Height='115'/><TextBlock Text='Откат сохраняет личные данные. При конфликте сначала сохрани правки и сравни файлы.' TextWrapping='Wrap' Margin='0,10'/></StackPanel></ScrollViewer></TabItem>
-</TabControl></StackPanel><TextBlock x:Name='Status' Grid.Row='2' Text='Готово' Foreground='#9ccfd8' TextWrapping='Wrap' Margin='0,12,0,0'/></Grid></Window>";
-        using(var reader=XmlReader.Create(new StringReader(xaml)))window=(Window)XamlReader.Load(reader);
-        version=Get<TextBlock>("Version");status=Get<TextBlock>("Status");update=Get<TextBlock>("Update");feed=Get<TextBox>("Feed");browser=Get<TextBox>("Browser");spaces=Get<DataGrid>("Spaces");actions=Get<StackPanel>("Actions");backups=Get<ListBox>("Backups");conflicts=Get<ListBox>("Conflicts");
-        health=Get<TextBlock>("Health");
+        using(var stream=typeof(Center).Assembly.GetManifestResourceStream("Center.xaml"))window=(Window)XamlReader.Load(stream);
+        window.Resources["StatusBrush"]=new SolidColorBrush(Color.FromRgb(156,207,216));window.Resources["ErrorBrush"]=new SolidColorBrush(Color.FromRgb(235,111,146));
+        version=Get<TextBlock>("Version");status=Get<TextBlock>("Status");update=Get<TextBlock>("Update");feed=Get<TextBox>("Feed");browser=Get<TextBox>("Browser");spaces=Get<DataGrid>("Spaces");actions=Get<Grid>("Actions");backups=Get<ListBox>("Backups");conflicts=Get<ListBox>("Conflicts");health=Get<TextBlock>("Health");
         desktop=Get<CheckBox>("Desktop");files=Get<CheckBox>("Files");borders=Get<CheckBox>("Borders");auto=Get<CheckBox>("Auto");hide=Get<CheckBox>("Hide");cursor=Get<CheckBox>("Cursor");check=Get<CheckBox>("Check");
-        Button("Проверить обновления",Check,Get<WrapPanel>("UpdateButtons"));Button("Установить",async()=>{await Run("Update","");await Refresh();await Check();},Get<WrapPanel>("UpdateButtons"));
-        Button("Сохранить настройки",Save,Get<WrapPanel>("SettingsButtons"));
-        Button("Проверить состояние",async()=>{await Refresh();},Get<WrapPanel>("RecoveryButtons"));
-        Button("Откатить версию",async()=>{if(MessageBox.Show(window,"Вернуться к предыдущей версии?","Откат",MessageBoxButton.YesNo)!=MessageBoxResult.Yes)return;await Run("Rollback","");LoadSettings();await Refresh();},Get<WrapPanel>("RecoveryButtons"));
-        Button("Панель Windows",async()=>{await Run("RestoreTaskbar","");},Get<WrapPanel>("RecoveryButtons"));
-        Button("Открыть копии",()=>{Process.Start("explorer.exe",Quote(Path.Combine(root,"backups")));return Task.FromResult(0);},Get<WrapPanel>("RecoveryButtons"));
-        Button("Сравнить конфиги",Compare,Get<WrapPanel>("RecoveryButtons"));
-        Button("Удалить окружение",async()=>{if(MessageBox.Show(window,"Восстановить исходные конфиги и отключить сборку? Резервные копии сохранятся.","Удаление",MessageBoxButton.YesNo)!=MessageBoxResult.Yes)return;await Run("Uninstall","");string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller);window.Close();},Get<WrapPanel>("RecoveryButtons"));
+        Bind("CheckUpdates",Check);Bind("InstallUpdate",async()=>{await Run("Update","");await Refresh();await Check();Say("Обновление установлено. Новая версия центра откроется при следующем запуске.");});
+        Bind("SaveSource",SaveSource);Bind("SaveSettings",Save);Bind("CheckHealth",Refresh);
+        Bind("StartDesktop",async()=>{await Run("Start","");Say("Включённые компоненты запущены с сохранёнными настройками.");});
+        Bind("Rollback",async()=>{if(!Confirm("Вернуть предыдущую версию?","Окружение вернётся к предыдущему выпуску. Текущие личные настройки сохранятся.","Вернуть версию",false))return;await Run("Rollback","");LoadSettings();await Refresh();Say("Предыдущая версия восстановлена. Открой центр заново.");});
+        Bind("RestoreTaskbar",async()=>{await Run("RestoreTaskbar","");Say("Панель Windows показана. Чтобы оставить её, отключи скрытие в настройках.");});
+        Bind("OpenBackups",()=>{string folder=Path.Combine(root,"backups");Directory.CreateDirectory(folder);Process.Start("explorer.exe",Quote(folder));return Task.FromResult(0);});
+        Bind("Compare",Compare);
+        Bind("Uninstall",async()=>{if(!Confirm("Удалить Rose Pine Desktop?","Будут восстановлены исходные конфиги и системные настройки. Резервные копии и ранее установленные приложения сохранятся.","Удалить окружение",true))return;await Run("Uninstall","");dirty=false;feed.Text=savedFeed;closingAllowed=true;string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller);window.Close();});
         Get<Button>("Browse").Click+=(s,e)=>ChooseBrowser((Button)s);
-        window.PreviewKeyDown+=(s,e)=>{if(e.Key==System.Windows.Input.Key.Escape)window.Close();};
+        Get<Button>("PickSource").Click+=(s,e)=>{var dialog=new OpenFileDialog{Filter="Манифест выпуска (*.json)|*.json|Все файлы|*.*"};if(dialog.ShowDialog(window)==true)feed.Text=dialog.FileName;};
+        foreach(var box in new[]{desktop,files,borders,auto,hide,cursor,check})box.Click+=(s,e)=>Changed();
+        browser.TextChanged+=(s,e)=>{BrowserLabel();Changed();};feed.TextChanged+=(s,e)=>SourceChanged();
+        spaces.CellEditEnding+=(s,e)=>{if(e.EditAction==DataGridEditAction.Commit)Changed();};
+        conflicts.SelectionChanged+=(s,e)=>Get<Button>("Compare").IsEnabled=conflicts.SelectedIndex>=0&&conflicts.SelectedIndex<conflictFiles.Count;
+        window.PreviewKeyDown+=(s,e)=>{if(e.Key==System.Windows.Input.Key.Escape&&!busy)window.Close();};
+        window.Closing+=(s,e)=>{if(busy&&!closingAllowed){e.Cancel=true;return;}if((dirty||feed.Text.Trim()!=savedFeed)&&!Confirm("Изменения не сохранены","Закрыть центр и отменить несохранённые изменения?","Закрыть без сохранения",false))e.Cancel=true;};
         window.SourceInitialized+=(s,e)=>{int dark=1;DwmSetWindowAttribute(new WindowInteropHelper(window).Handle,20,ref dark,4);};
         LoadSettings();if(autoRefresh)window.Loaded+=async(s,e)=>await Busy(Refresh);
     }
@@ -140,7 +181,29 @@ class Center {
             int smoke=Array.IndexOf(args,"--smoke-test");
             if(smoke>=0){
                 var installed=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(Path.Combine(root,"installed.json")));if(!Equals(installed["sandbox"],true))throw new Exception("Smoke test requires sandbox installation");
-                center.window.Loaded+=async(s,e)=>{try{await center.Refresh();var tabs=center.Get<TabControl>("Tabs");for(int i=0;i<tabs.Items.Count;i++){tabs.SelectedIndex=i;center.window.UpdateLayout();}if(((ObservableCollection<Space>)center.spaces.ItemsSource).Count!=9)throw new Exception("Workspaces missing");File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,backups=center.backups.Items.Count,version=center.version.Text}));}catch(Exception error){File.WriteAllText(args[smoke+1],json.Serialize(new{ok=false,error=error.ToString()}));}finally{center.window.Close();}};
+                center.window.Loaded+=async(s,e)=>{
+                    try{
+                        await center.Refresh();var tabs=center.Get<TabControl>("Tabs");if(tabs.SelectedIndex!=0)throw new Exception("Initial page missing");
+                        foreach(int width in new[]{1080,920}){center.window.Width=width;for(int i=0;i<tabs.Items.Count;i++){tabs.SelectedIndex=i;center.window.UpdateLayout();if(((TabItem)tabs.Items[i]).ActualWidth<100)throw new Exception("Navigation clipped");var host=(ContentPresenter)tabs.Template.FindName("PART_SelectedContentHost",tabs);if(host==null||host.Content==null||host.ActualWidth<500)throw new Exception("Page content missing");}}
+                        if(((ObservableCollection<Space>)center.spaces.ItemsSource).Count!=9)throw new Exception("Workspaces missing");
+                        if(center.Get<Button>("InstallUpdate").IsEnabled||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Initial action state");
+                        string original=center.feed.Text;center.feed.Text="https://example.test/release.json";
+                        if(!center.Get<Button>("SaveSource").IsEnabled||center.Get<Button>("CheckUpdates").IsEnabled)throw new Exception("Unsaved source state");
+                        center.feed.Text=original;center.Changed();if(!center.dirty||!center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Dirty settings");center.Clean();
+                        center.latest=json.Deserialize<Dictionary<string,object>>("{\"available\":true}");center.SourceChanged();if(!center.Get<Button>("InstallUpdate").IsEnabled)throw new Exception("Available update state");center.latest=null;center.SourceChanged();
+                        await center.Busy(()=>{throw new Exception("test error");});if(center.status.Text!="test error"||!center.actions.IsEnabled)throw new Exception("Error state");
+                        await center.Busy(()=>{center.Say("test success");return Task.FromResult(0);});if(center.status.Text!="test success")throw new Exception("Success overwritten");
+                        var row=new Space{name="7",monitor=0};if(row.shortcut!="Alt+7"||row.displayMonitor!=1)throw new Exception("Workspace labels");row.displayMonitor=2;if(row.monitor!=1||json.Serialize(row).Contains("displayMonitor"))throw new Exception("Monitor storage");
+                        // This mode only runs against an explicitly sandboxed installation.
+                        string fixture=Path.Combine(root,"ui-feed.json");File.WriteAllText(fixture,json.Serialize(new{schema=1,version="99.0.0",url="unused.zip",sha256=new String('0',64),notes="UI test"}));
+                        bool oldAuto=center.auto.IsChecked==true;center.auto.IsChecked=!oldAuto;center.Changed();center.feed.Text=fixture;await center.SaveSource();
+                        var saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.feed!=fixture||saved.autostart!=oldAuto||center.auto.IsChecked==oldAuto||!center.dirty)throw new Exception("Source save lost setting drafts");
+                        await center.Check();if(!center.Get<Button>("InstallUpdate").IsEnabled||!center.update.Text.Contains("UI test"))throw new Exception("Update check state");
+                        await center.Save();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.autostart==oldAuto||center.dirty||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Settings save failed");
+                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=10,backups=center.backups.Items.Count,version=center.version.Text}));
+                    }catch(Exception error){File.WriteAllText(args[smoke+1],json.Serialize(new{ok=false,error=error.ToString()}));}
+                    finally{center.dirty=false;center.feed.Text=center.savedFeed;center.window.Close();}
+                };
             }
             app.Run(center.window);return 0;
         }catch(Exception e){MessageBox.Show(e.Message,"Rose Pine Desktop");return 1;}
