@@ -342,9 +342,12 @@ function Get-Update($Settings) {
 }
 function Stage-Release($Zip,$Sha,$Version) {
     Download $Zip (Join-Path $Cache ('release-'+$Version+'.zip')) $Sha
-    $dest=Join-Path $Root ('versions\'+$Version)
-    if(!(Test-Path $dest)){Expand-Safe (Join-Path $Cache ('release-'+$Version+'.zip')) $dest}
-    $m=Read-Json (Join-Path $dest 'release.json');if($m.version -ne $Version){throw 'Версия пакета не совпадает с манифестом'}
+    # Never trust or overwrite an existing release directory after an interrupted update.
+    $dest=Under (Join-Path $Root 'versions') (Join-Path $Root ('versions\'+$Version+'-'+[guid]::NewGuid().ToString('N')))
+    try {
+        Expand-Safe (Join-Path $Cache ('release-'+$Version+'.zip')) $dest
+        $m=Read-Json (Join-Path $dest 'release.json');if($m.schema -ne 1 -or $m.version -ne $Version){throw 'Версия пакета не совпадает с манифестом'}
+    }catch{if(Test-Path -LiteralPath $dest){Remove-Item -LiteralPath $dest -Recurse -Force};throw}
     $dest
 }
 function Previous-Payload($Version) {

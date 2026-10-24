@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -141,7 +141,7 @@ class Center {
         foreach(var row in shortcutRows){var item=definitions.First(x=>x.id==row.id);row.text=String.Join("; ",DesktopShortcuts.Effective(item,savedHotkeys).Select(DesktopShortcuts.Format));}
         hotkeys.Items.Refresh();CleanHotkeys();UpdateWorkspaceKeys();Say("Сочетания сохранены и применены. Подсказка обновлена; открой её заново, если она уже была открыта.");
     }
-    Task ResetHotkey(){var row=hotkeys.SelectedItem as ShortcutRow;if(row!=null){row.text=String.Join("; ",definitions.First(x=>x.id==row.id).bindings.Select(DesktopShortcuts.Format));hotkeys.Items.Refresh();HotkeysChanged();}return Task.FromResult(0);}
+    Task ResetHotkey(){var row=hotkeys.SelectedItem as ShortcutRow;if(row!=null){hotkeys.CancelEdit(DataGridEditingUnit.Cell);hotkeys.CancelEdit(DataGridEditingUnit.Row);row.text=String.Join("; ",definitions.First(x=>x.id==row.id).bindings.Select(DesktopShortcuts.Format));hotkeys.Items.Refresh();HotkeysChanged();}return Task.FromResult(0);}
     Task ResetHotkeys(){
         if(!Confirm("Сбросить все сочетания?","Будут выбраны стандартные сочетания окружения. Изменения применятся только после нажатия «Сохранить сочетания».","Сбросить сочетания",false))return Task.FromResult(0);
         hotkeys.CancelEdit(DataGridEditingUnit.Cell);hotkeys.CancelEdit(DataGridEditingUnit.Row);
@@ -151,6 +151,7 @@ class Center {
         var request=Path.Combine(root,"requests","settings-"+Guid.NewGuid().ToString("N")+".json");Directory.CreateDirectory(Path.GetDirectoryName(request));File.WriteAllText(request,json.Serialize(s));
         try{await Run("Apply","-SettingsFile "+Quote(request));await Run("Start","");await Refresh();}finally{File.Delete(request);}
     }
+    async Task Rollback(){await Run("Rollback","");await Refresh();Say("Предыдущая версия восстановлена. Открой центр заново.");}
     async Task SaveSource(){
         string source=feed.Text.Trim();Uri address;
         if(source.Length>0&&!Path.IsPathRooted(source)&&(!Uri.TryCreate(source,UriKind.Absolute,out address)||address.Scheme!="https"))throw new Exception("Укажи HTTPS-адрес манифеста или полный путь к локальному файлу.");
@@ -181,7 +182,7 @@ class Center {
         Bind("SaveHotkeys",SaveHotkeys);Bind("ResetHotkey",ResetHotkey);Bind("ResetHotkeys",ResetHotkeys);
         Bind("SaveSource",SaveSource);Bind("SaveSettings",Save);Bind("CheckHealth",Refresh);
         Bind("StartDesktop",async()=>{await Run("Start","");Say("Включённые компоненты запущены с сохранёнными настройками.");});
-        Bind("Rollback",async()=>{if(!Confirm("Вернуть предыдущую версию?","Окружение вернётся к предыдущему выпуску. Текущие личные настройки сохранятся.","Вернуть версию",false))return;await Run("Rollback","");LoadSettings();await Refresh();Say("Предыдущая версия восстановлена. Открой центр заново.");});
+        Bind("Rollback",async()=>{if(!Confirm("Вернуть предыдущую версию?","Окружение вернётся к предыдущему выпуску. Текущие личные настройки сохранятся.","Вернуть версию",false))return;await Rollback();});
         Bind("RestoreTaskbar",async()=>{await Run("RestoreTaskbar","");Say("Панель Windows показана. Чтобы оставить её, отключи скрытие в настройках.");});
         Bind("OpenBackups",()=>{string folder=Path.Combine(root,"backups");Directory.CreateDirectory(folder);Process.Start("explorer.exe",Quote(folder));return Task.FromResult(0);});
         Bind("Compare",Compare);
@@ -245,8 +246,10 @@ class Center {
                         await center.Save();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.autostart==oldAuto||center.dirty||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Settings save failed");
                         if(!center.hotkeysDirty||browserKey.text!="Alt+F6")throw new Exception("Settings save lost shortcut draft");
                         await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys["browser"][0]!="alt+f6"||center.hotkeysDirty)throw new Exception("Hotkey save failed");
-                        center.hotkeys.SelectedItem=browserKey;await center.ResetHotkey();await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys.ContainsKey("browser"))throw new Exception("Hotkey reset failed");
-                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=16,shortcuts=center.shortcutRows.Count,backups=center.backups.Items.Count,version=center.version.Text}));
+                        tabs.SelectedIndex=2;center.hotkeys.SelectedItem=browserKey;center.hotkeys.CurrentCell=new DataGridCellInfo(browserKey,center.hotkeys.Columns[2]);center.hotkeys.ScrollIntoView(browserKey);center.window.UpdateLayout();if(!center.hotkeys.BeginEdit())throw new Exception("Shortcut edit did not start");await center.ResetHotkey();await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys.ContainsKey("browser"))throw new Exception("Hotkey reset failed");
+                        center.feed.Text="https://example.test/draft.json";center.auto.IsChecked=oldAuto;center.Changed();browserKey.text="Alt+F7";center.HotkeysChanged();
+                        await center.Rollback();if(!center.dirty||!center.hotkeysDirty||browserKey.text!="Alt+F7"||center.auto.IsChecked!=oldAuto||center.feed.Text!="https://example.test/draft.json")throw new Exception("Rollback lost drafts");
+                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=18,shortcuts=center.shortcutRows.Count,backups=center.backups.Items.Count,version=center.version.Text}));
                     }catch(Exception error){File.WriteAllText(args[smoke+1],json.Serialize(new{ok=false,error=error.ToString()}));}
                     finally{center.dirty=false;center.hotkeysDirty=false;center.feed.Text=center.savedFeed;center.window.Close();}
                 };

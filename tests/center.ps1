@@ -10,6 +10,12 @@ if(Test-Path (Join-Path $TestRoot 'installed.json')){
     $installed=Get-Content (Join-Path $TestRoot 'installed.json') -Raw -Encoding UTF8|ConvertFrom-Json
     if(!$installed.sandbox){throw 'Requires a sandbox installation'}
 }else{
+    $previous=Join-Path $TestRoot 'previous-release'
+    Copy-Item $payload $previous -Recurse
+    $manifest=Get-Content (Join-Path $previous 'release.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    $manifest.version='0.0.1';$manifest|ConvertTo-Json|Set-Content (Join-Path $previous 'release.json') -Encoding UTF8
+    & $ps -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $payload 'Desktop.ps1') -Action Install -Root $TestRoot -ProfileRoot $profile -Sandbox -Release $previous -Cache (Join-Path $Repo 'cache')|Out-Null
+    if($LASTEXITCODE){throw 'Previous sandbox installation failed'}
     & $ps -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $payload 'Desktop.ps1') -Action Install -Root $TestRoot -ProfileRoot $profile -Sandbox -Release $payload -Cache (Join-Path $Repo 'cache')|Out-Null
     if($LASTEXITCODE){throw 'Sandbox installation failed'}
 }

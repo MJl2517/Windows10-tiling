@@ -34,7 +34,12 @@ $zip=Join-Path $TestRoot ("fixture-$NextVersion.zip");Add-Type -AssemblyName Sys
 $settings.feed=$feed;$settings|ConvertTo-Json -Depth 10|Set-Content "$TestRoot\test-settings.json" -Encoding UTF8
 Invoke-Engine Apply @('-SettingsFile',"$TestRoot\test-settings.json")|Out-Null
 $r=Invoke-Engine Check;Assert $r.available 'Update was not found'
+# Simulate a prior crash during extraction, including an apparently valid manifest.
+$partial=Join-Path $TestRoot ("versions\$NextVersion")
+New-Item -ItemType Directory $partial -Force|Out-Null
+Copy-Item "$updatePayload\release.json" $partial
 $r=Invoke-Engine Update;Assert ($r.version -eq $NextVersion) 'Update failed';Assert ((Get-Content $old -Raw) -match '# test update') 'Updated config missing';Assert ((Get-Content $history -Raw) -eq '{"keep":true}') 'History was overwritten';$results.Add(@{test='local update + preserve data';passed=$true})
+$results.Add(@{test='retry after interrupted extraction';passed=$true})
 $settings.autostart=$false;$settings|ConvertTo-Json -Depth 10|Set-Content "$TestRoot\test-settings.json" -Encoding UTF8
 Invoke-Engine Apply @('-SettingsFile',"$TestRoot\test-settings.json")|Out-Null
 $r=Invoke-Engine Rollback;Assert ($r.version -eq $BaseVersion) 'Rollback failed';Assert ((Get-Content $old -Raw) -notmatch '# test update') 'Rollback did not restore config';Assert (!(Get-Content "$TestRoot\settings.json" -Raw|ConvertFrom-Json).autostart) 'Rollback lost newer user settings';$results.Add(@{test='version rollback after settings change';passed=$true})
@@ -61,6 +66,11 @@ Invoke-Engine Check @() -Fails|Out-Null;$results.Add(@{test='unavailable feed';p
 $settings.feed=$feed;$settings|ConvertTo-Json -Depth 10|Set-Content "$TestRoot\settings.json" -Encoding UTF8
 $f=Get-Content $feed -Raw|ConvertFrom-Json;$f.version=$BadVersion;$f.sha256=('0'*64);$f|ConvertTo-Json|Set-Content $feed -Encoding UTF8
 Invoke-Engine Update @() -Fails|Out-Null;Assert ((Get-FileHash $old).Hash -eq $before) 'Corrupt update changed configuration';$results.Add(@{test='bad checksum';passed=$true})
+$f.sha256=(Get-FileHash $zip).Hash;$f|ConvertTo-Json|Set-Content $feed -Encoding UTF8
+Invoke-Engine Update @() -Fails|Out-Null
+Assert (@(Get-ChildItem "$TestRoot\versions" -Directory -Filter "$BadVersion*").Count -eq 0) 'Rejected release left an incomplete directory'
+Assert ((Get-FileHash $old).Hash -eq $before) 'Version mismatch changed configuration'
+$results.Add(@{test='version mismatch cleanup';passed=$true})
 Invoke-Engine Uninstall|Out-Null;Assert ((Get-FileHash $old).Hash -eq $before) 'Uninstall overwrote manual edit';Assert (Test-Path $history) 'Uninstall deleted history';$results.Add(@{test='uninstall preserves user changes';passed=$true})
 Invoke-Engine Import @('-Release',"$Repo\build\payload-$BaseVersion")|Out-Null
 Invoke-Engine Uninstall|Out-Null;Assert ((Get-Content $old -Raw) -eq 'original config') 'Original config not restored';$results.Add(@{test='uninstall restores original config';passed=$true})
