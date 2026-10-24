@@ -9,6 +9,7 @@ foreach($dir in 'templates','helpers','licenses'){New-Item -ItemType Directory -
 Copy-Item "$repo\templates\*" "$payload\templates" -Recurse -Force
 Copy-Item "$repo\dependencies.json" $payload -Force
 Copy-Item "$repo\prerequisites.json" $payload -Force
+Copy-Item "$repo\shortcuts.json" $payload -Force
 Copy-Item "$repo\THIRD-PARTY.md" $payload -Force
 & node.exe "$repo\scripts\npm-notices.cjs"
 if($LASTEXITCODE){throw 'License collection failed'}
@@ -28,7 +29,9 @@ $framework=Split-Path $csc
 foreach($name in 'PresentationCore','PresentationFramework','WindowsBase','UIAutomationClient','UIAutomationTypes'){$refs+='/r:'+(Join-Path $framework "WPF\$name.dll")}
 $helpers=@{CloseWindow='close-window';ResizeWindow='resize-window';PowerMenu='power-menu';TaskbarToggle='taskbar-toggle';TaskWindows='task-windows';TrayIdentity='tray-identity';OpenWithLauncher='open-with';YaziDrag='yazi-drag'}
 foreach($name in $helpers.Keys){$target=if($name -in 'TaskWindows','TrayIdentity'){'/target:exe'}else{'/target:winexe'};& $csc /nologo $target /platform:x64 /optimize+ @refs "/out:$payload\helpers\$($helpers[$name]).exe" "$repo\src\helpers\$name.cs";if($LASTEXITCODE){throw "Compile failed: $name"}}
-& $csc /nologo /target:winexe /platform:x64 /optimize+ @refs "/resource:$repo\src\Center.xaml,Center.xaml" "/out:$payload\Center.exe" "$repo\src\Center.cs"
+& $csc /nologo /target:library /optimize+ /r:System.Web.Extensions.dll "/out:$payload\Shortcuts.dll" "$repo\src\Shortcuts.cs"
+if($LASTEXITCODE){throw 'Shortcut library compile failed'}
+& $csc /nologo /target:winexe /platform:x64 /optimize+ @refs "/r:$payload\Shortcuts.dll" "/resource:$repo\src\Center.xaml,Center.xaml" "/out:$payload\Center.exe" "$repo\src\Center.cs"
 if($LASTEXITCODE){throw 'Center compile failed'}
 & $csc /nologo /target:winexe /platform:x64 /optimize+ @refs "/out:$repo\build\RosePineCenter.exe" "$repo\src\Launcher.cs"
 if($LASTEXITCODE){throw 'Launcher compile failed'}

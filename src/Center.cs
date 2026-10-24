@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows.Data;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows;
@@ -16,19 +18,22 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32;
 class Space {
     public string name{get;set;} public string label{get;set;} public int monitor{get;set;}
-    [ScriptIgnore] public string shortcut{get{return "Alt+"+name;}}
+    [ScriptIgnore] public string shortcut{get;set;}
     [ScriptIgnore] public int displayMonitor{get{return monitor+1;}set{monitor=value-1;}}
 }
+class ShortcutRow {public string id{get;set;} public string group{get;set;} public string title{get;set;} public string text{get;set;}}
 class Settings {
     public string[] components{get;set;} public bool autostart{get;set;} public bool hideTaskbar{get;set;} public bool cursor{get;set;}
-    public string browser{get;set;} public Space[] workspaces{get;set;} public string feed{get;set;} public bool checkAtLogon{get;set;}
+    public string browser{get;set;} public Space[] workspaces{get;set;} public string feed{get;set;} public bool checkAtLogon{get;set;} public Dictionary<string,string[]> hotkeys{get;set;}
 }
 class Center {
     static string root;
     static JavaScriptSerializer json=new JavaScriptSerializer(){MaxJsonLength=16000000};
     Window window;TextBlock status,version,update,health;TextBox feed,browser;DataGrid spaces;
     CheckBox desktop,files,borders,auto,hide,cursor,check;Grid actions;ListBox backups,conflicts;Dictionary<string,object> latest;
-    bool loading,dirty,busy,closingAllowed;int monitors=1;string savedFeed="";
+    bool loading,dirty,busy,closingAllowed,hotkeysDirty;int monitors=1;string savedFeed="";
+    ShortcutDefinition[] definitions;ObservableCollection<ShortcutRow> shortcutRows;DataGrid hotkeys;Dictionary<string,string[]> savedHotkeys;
+    string Catalog {get{return Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"shortcuts.json");}}
     List<Dictionary<string,object>> conflictFiles=new List<Dictionary<string,object>>();
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     static string Quote(string s){return "\""+s.Replace("\"","")+"\"";}
@@ -65,7 +70,9 @@ class Center {
         desktop.IsChecked=Array.IndexOf(s.components,"desktop")>=0;files.IsChecked=Array.IndexOf(s.components,"files")>=0;borders.IsChecked=Array.IndexOf(s.components,"borders")>=0;
         auto.IsChecked=s.autostart;hide.IsChecked=s.hideTaskbar;cursor.IsChecked=s.cursor;check.IsChecked=s.checkAtLogon;
         browser.Text=s.browser;savedFeed=s.feed??"";feed.Text=savedFeed;spaces.ItemsSource=new ObservableCollection<Space>(s.workspaces);
-        loading=false;Clean();BrowserLabel();SourceChanged();
+        savedHotkeys=s.hotkeys??new Dictionary<string,string[]>();
+        shortcutRows=new ObservableCollection<ShortcutRow>(definitions.Select(x=>new ShortcutRow{id=x.id,group=x.group,title=x.title,text=String.Join("; ",DesktopShortcuts.Effective(x,savedHotkeys).Select(DesktopShortcuts.Format))}));hotkeys.ItemsSource=shortcutRows;
+        loading=false;Clean();CleanHotkeys();UpdateWorkspaceKeys();BrowserLabel();SourceChanged();FilterHotkeys();
     }
     async Task Refresh(){
         var s=await Run("Status","");version.Text="Версия "+s["version"];monitors=Convert.ToInt32(s["monitors"]);
@@ -110,8 +117,35 @@ class Center {
         if(components.Count==0)throw new Exception("Выбери хотя бы один компонент");
         if(browser.Text.Length>0&&!File.Exists(browser.Text))throw new Exception("Файл браузера не найден");
         var rows=(ObservableCollection<Space>)spaces.ItemsSource;foreach(var row in rows){if(String.IsNullOrWhiteSpace(row.label)||row.label.Contains("\n"))throw new Exception("Укажи название рабочего пространства");if(row.monitor<0||row.monitor>=monitors)throw new Exception("Номер монитора должен быть от 1 до "+monitors);}
-        var s=new Settings{components=components.ToArray(),autostart=auto.IsChecked==true,hideTaskbar=hide.IsChecked==true,cursor=cursor.IsChecked==true,checkAtLogon=check.IsChecked==true,browser=browser.Text,feed=savedFeed,workspaces=new List<Space>(rows).ToArray()};
+        var s=new Settings{components=components.ToArray(),autostart=auto.IsChecked==true,hideTaskbar=hide.IsChecked==true,cursor=cursor.IsChecked==true,checkAtLogon=check.IsChecked==true,browser=browser.Text,feed=savedFeed,hotkeys=savedHotkeys,workspaces=new List<Space>(rows).ToArray()};
         await ApplySettings(s);Clean();Say("Настройки сохранены. Новые параметры терминала применятся при следующем запуске.");
+    }
+    void HotkeysChanged(){if(loading)return;hotkeysDirty=true;Get<Button>("SaveHotkeys").IsEnabled=true;Get<TextBlock>("HotkeysState").Text="Есть несохранённые сочетания";Get<TextBlock>("HotkeysState").Foreground=new SolidColorBrush(Color.FromRgb(246,193,119));}
+    void CleanHotkeys(){hotkeysDirty=false;Get<Button>("SaveHotkeys").IsEnabled=false;Get<TextBlock>("HotkeysState").Text="Все сочетания сохранены";Get<TextBlock>("HotkeysState").Foreground=new SolidColorBrush(Color.FromRgb(144,140,170));}
+    void UpdateWorkspaceKeys(){
+        foreach(Space space in (IEnumerable)spaces.ItemsSource){var item=definitions.FirstOrDefault(x=>x.id=="workspace-"+space.name);space.shortcut=item==null?"—":String.Join("; ",DesktopShortcuts.Effective(item,savedHotkeys).Select(DesktopShortcuts.Format));}spaces.Items.Refresh();
+    }
+    void FilterHotkeys(){
+        if(shortcutRows==null)return;if(!hotkeys.CommitEdit(DataGridEditingUnit.Cell,true)||!hotkeys.CommitEdit(DataGridEditingUnit.Row,true))return;string search=Get<TextBox>("HotkeySearch").Text.Trim();var view=CollectionViewSource.GetDefaultView(shortcutRows);
+        view.Filter=item=>{var row=(ShortcutRow)item;return (row.group+" "+row.title+" "+row.text).IndexOf(search,StringComparison.CurrentCultureIgnoreCase)>=0;};
+        Get<TextBlock>("HotkeysEmpty").Visibility=view.IsEmpty?Visibility.Visible:Visibility.Collapsed;
+    }
+    Dictionary<string,string[]> DraftHotkeys(){
+        if(!hotkeys.CommitEdit(DataGridEditingUnit.Cell,true)||!hotkeys.CommitEdit(DataGridEditingUnit.Row,true))throw new Exception("Заверши ввод сочетания.");
+        var result=new Dictionary<string,string[]>(savedHotkeys);
+        foreach(var row in shortcutRows){var item=definitions.First(x=>x.id==row.id);string[] keys=DesktopShortcuts.Parse(row.text);if(keys.SequenceEqual(item.bindings.Select(DesktopShortcuts.Normalize)))result.Remove(row.id);else result[row.id]=keys;}
+        DesktopShortcuts.Validate(definitions,result);return result;
+    }
+    async Task SaveHotkeys(){
+        var draft=DraftHotkeys();var s=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));s.hotkeys=draft;await ApplySettings(s);savedHotkeys=draft;
+        foreach(var row in shortcutRows){var item=definitions.First(x=>x.id==row.id);row.text=String.Join("; ",DesktopShortcuts.Effective(item,savedHotkeys).Select(DesktopShortcuts.Format));}
+        hotkeys.Items.Refresh();CleanHotkeys();UpdateWorkspaceKeys();Say("Сочетания сохранены и применены. Подсказка обновлена; открой её заново, если она уже была открыта.");
+    }
+    Task ResetHotkey(){var row=hotkeys.SelectedItem as ShortcutRow;if(row!=null){row.text=String.Join("; ",definitions.First(x=>x.id==row.id).bindings.Select(DesktopShortcuts.Format));hotkeys.Items.Refresh();HotkeysChanged();}return Task.FromResult(0);}
+    Task ResetHotkeys(){
+        if(!Confirm("Сбросить все сочетания?","Будут выбраны стандартные сочетания окружения. Изменения применятся только после нажатия «Сохранить сочетания».","Сбросить сочетания",false))return Task.FromResult(0);
+        hotkeys.CancelEdit(DataGridEditingUnit.Cell);hotkeys.CancelEdit(DataGridEditingUnit.Row);
+        foreach(var row in shortcutRows)row.text=String.Join("; ",definitions.First(x=>x.id==row.id).bindings.Select(DesktopShortcuts.Format));hotkeys.Items.Refresh();HotkeysChanged();return Task.FromResult(0);
     }
     async Task ApplySettings(Settings s){
         var request=Path.Combine(root,"requests","settings-"+Guid.NewGuid().ToString("N")+".json");Directory.CreateDirectory(Path.GetDirectoryName(request));File.WriteAllText(request,json.Serialize(s));
@@ -141,23 +175,28 @@ class Center {
         using(var stream=typeof(Center).Assembly.GetManifestResourceStream("Center.xaml"))window=(Window)XamlReader.Load(stream);
         window.Resources["StatusBrush"]=new SolidColorBrush(Color.FromRgb(156,207,216));window.Resources["ErrorBrush"]=new SolidColorBrush(Color.FromRgb(235,111,146));
         version=Get<TextBlock>("Version");status=Get<TextBlock>("Status");update=Get<TextBlock>("Update");feed=Get<TextBox>("Feed");browser=Get<TextBox>("Browser");spaces=Get<DataGrid>("Spaces");actions=Get<Grid>("Actions");backups=Get<ListBox>("Backups");conflicts=Get<ListBox>("Conflicts");health=Get<TextBlock>("Health");
+        definitions=DesktopShortcuts.Load(Catalog);hotkeys=Get<DataGrid>("Hotkeys");
         desktop=Get<CheckBox>("Desktop");files=Get<CheckBox>("Files");borders=Get<CheckBox>("Borders");auto=Get<CheckBox>("Auto");hide=Get<CheckBox>("Hide");cursor=Get<CheckBox>("Cursor");check=Get<CheckBox>("Check");
         Bind("CheckUpdates",Check);Bind("InstallUpdate",async()=>{await Run("Update","");await Refresh();await Check();Say("Обновление установлено. Новая версия центра откроется при следующем запуске.");});
+        Bind("SaveHotkeys",SaveHotkeys);Bind("ResetHotkey",ResetHotkey);Bind("ResetHotkeys",ResetHotkeys);
         Bind("SaveSource",SaveSource);Bind("SaveSettings",Save);Bind("CheckHealth",Refresh);
         Bind("StartDesktop",async()=>{await Run("Start","");Say("Включённые компоненты запущены с сохранёнными настройками.");});
         Bind("Rollback",async()=>{if(!Confirm("Вернуть предыдущую версию?","Окружение вернётся к предыдущему выпуску. Текущие личные настройки сохранятся.","Вернуть версию",false))return;await Run("Rollback","");LoadSettings();await Refresh();Say("Предыдущая версия восстановлена. Открой центр заново.");});
         Bind("RestoreTaskbar",async()=>{await Run("RestoreTaskbar","");Say("Панель Windows показана. Чтобы оставить её, отключи скрытие в настройках.");});
         Bind("OpenBackups",()=>{string folder=Path.Combine(root,"backups");Directory.CreateDirectory(folder);Process.Start("explorer.exe",Quote(folder));return Task.FromResult(0);});
         Bind("Compare",Compare);
-        Bind("Uninstall",async()=>{if(!Confirm("Удалить Rose Pine Desktop?","Будут восстановлены исходные конфиги и системные настройки. Резервные копии и ранее установленные приложения сохранятся.","Удалить окружение",true))return;await Run("Uninstall","");dirty=false;feed.Text=savedFeed;closingAllowed=true;string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller);window.Close();});
+        Bind("Uninstall",async()=>{if(!Confirm("Удалить Rose Pine Desktop?","Будут восстановлены исходные конфиги и системные настройки. Резервные копии и ранее установленные приложения сохранятся.","Удалить окружение",true))return;await Run("Uninstall","");dirty=false;hotkeysDirty=false;feed.Text=savedFeed;closingAllowed=true;string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller);window.Close();});
         Get<Button>("Browse").Click+=(s,e)=>ChooseBrowser((Button)s);
         Get<Button>("PickSource").Click+=(s,e)=>{var dialog=new OpenFileDialog{Filter="Манифест выпуска (*.json)|*.json|Все файлы|*.*"};if(dialog.ShowDialog(window)==true)feed.Text=dialog.FileName;};
         foreach(var box in new[]{desktop,files,borders,auto,hide,cursor,check})box.Click+=(s,e)=>Changed();
         browser.TextChanged+=(s,e)=>{BrowserLabel();Changed();};feed.TextChanged+=(s,e)=>SourceChanged();
+        Get<TextBox>("HotkeySearch").TextChanged+=(s,e)=>FilterHotkeys();
+        hotkeys.CellEditEnding+=(s,e)=>{if(e.EditAction==DataGridEditAction.Commit)HotkeysChanged();};
+        hotkeys.SelectionChanged+=(s,e)=>Get<Button>("ResetHotkey").IsEnabled=hotkeys.SelectedItem!=null;
         spaces.CellEditEnding+=(s,e)=>{if(e.EditAction==DataGridEditAction.Commit)Changed();};
         conflicts.SelectionChanged+=(s,e)=>Get<Button>("Compare").IsEnabled=conflicts.SelectedIndex>=0&&conflicts.SelectedIndex<conflictFiles.Count;
-        window.PreviewKeyDown+=(s,e)=>{if(e.Key==System.Windows.Input.Key.Escape&&!busy)window.Close();};
-        window.Closing+=(s,e)=>{if(busy&&!closingAllowed){e.Cancel=true;return;}if((dirty||feed.Text.Trim()!=savedFeed)&&!Confirm("Изменения не сохранены","Закрыть центр и отменить несохранённые изменения?","Закрыть без сохранения",false))e.Cancel=true;};
+        window.PreviewKeyDown+=(s,e)=>{if(e.Key==System.Windows.Input.Key.Escape&&!busy&&!(e.OriginalSource is TextBox))window.Close();};
+        window.Closing+=(s,e)=>{if(busy&&!closingAllowed){e.Cancel=true;return;}if((dirty||hotkeysDirty||feed.Text.Trim()!=savedFeed)&&!Confirm("Изменения не сохранены","Закрыть центр и отменить несохранённые изменения?","Закрыть без сохранения",false))e.Cancel=true;};
         window.SourceInitialized+=(s,e)=>{int dark=1;DwmSetWindowAttribute(new WindowInteropHelper(window).Handle,20,ref dark,4);};
         LoadSettings();if(autoRefresh)window.Loaded+=async(s,e)=>await Busy(Refresh);
     }
@@ -177,7 +216,7 @@ class Center {
             if(Array.IndexOf(args,"--self-test")>=0){var test=json.Deserialize<Settings>("{\"components\":[\"desktop\"],\"workspaces\":[]}");if(test.components[0]!="desktop")throw new Exception("JSON");var data=json.Deserialize<Dictionary<string,object>>("{\"backups\":[\"first\"],\"conflicts\":[],\"modified\":[]}");int count=0;foreach(object item in (IEnumerable)data["backups"])count++;if(count!=1)throw new Exception("Backup lists");return 0;}
             foreach(var pair in new[]{new[]{"--console","Console"},new[]{"--files","Files"},new[]{"--browser","Browser"},new[]{"--restore-taskbar","RestoreTaskbar"}})if(Array.IndexOf(args,pair[0])>=0){Task.Run(()=>Run(pair[1],"")).GetAwaiter().GetResult();return 0;}
             if(Array.IndexOf(args,"--logon")>=0){Task.Run(()=>Logon()).GetAwaiter().GetResult();return 0;}
-            var app=new Application();var center=new Center();center.Build(Array.IndexOf(args,"--smoke-test")<0);
+            var app=new Application();var center=new Center();center.Build(Array.IndexOf(args,"--smoke-test")<0);if(Array.IndexOf(args,"--hotkeys")>=0)center.Get<TabControl>("Tabs").SelectedIndex=2;
             int smoke=Array.IndexOf(args,"--smoke-test");
             if(smoke>=0){
                 var installed=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(Path.Combine(root,"installed.json")));if(!Equals(installed["sandbox"],true))throw new Exception("Smoke test requires sandbox installation");
@@ -193,16 +232,23 @@ class Center {
                         center.latest=json.Deserialize<Dictionary<string,object>>("{\"available\":true}");center.SourceChanged();if(!center.Get<Button>("InstallUpdate").IsEnabled)throw new Exception("Available update state");center.latest=null;center.SourceChanged();
                         await center.Busy(()=>{throw new Exception("test error");});if(center.status.Text!="test error"||!center.actions.IsEnabled)throw new Exception("Error state");
                         await center.Busy(()=>{center.Say("test success");return Task.FromResult(0);});if(center.status.Text!="test success")throw new Exception("Success overwritten");
-                        var row=new Space{name="7",monitor=0};if(row.shortcut!="Alt+7"||row.displayMonitor!=1)throw new Exception("Workspace labels");row.displayMonitor=2;if(row.monitor!=1||json.Serialize(row).Contains("displayMonitor"))throw new Exception("Monitor storage");
+                        var row=new Space{name="7",monitor=0};if(row.displayMonitor!=1)throw new Exception("Workspace labels");row.displayMonitor=2;if(row.monitor!=1||json.Serialize(row).Contains("displayMonitor"))throw new Exception("Monitor storage");
+                        if(center.shortcutRows.Count!=49||center.Get<Button>("SaveHotkeys").IsEnabled)throw new Exception("Hotkeys initial state");
+                        center.Get<TextBox>("HotkeySearch").Text="браузер";if(center.hotkeys.Items.Count!=1)throw new Exception("Hotkey search");center.Get<TextBox>("HotkeySearch").Text="no-such-action";if(center.Get<TextBlock>("HotkeysEmpty").Visibility!=Visibility.Visible)throw new Exception("Hotkey empty state");center.Get<TextBox>("HotkeySearch").Text="";
+                        var browserKey=center.shortcutRows.First(x=>x.id=="browser");browserKey.text="Alt+E";center.HotkeysChanged();string settingsBefore=File.ReadAllText(Path.Combine(root,"settings.json"));
+                        await center.Busy(center.SaveHotkeys);if(!center.status.Text.Contains("повторяется")||File.ReadAllText(Path.Combine(root,"settings.json"))!=settingsBefore||!center.hotkeysDirty)throw new Exception("Shortcut conflict state");browserKey.text="Alt+F6";
                         // This mode only runs against an explicitly sandboxed installation.
                         string fixture=Path.Combine(root,"ui-feed.json");File.WriteAllText(fixture,json.Serialize(new{schema=1,version="99.0.0",url="unused.zip",sha256=new String('0',64),notes="UI test"}));
                         bool oldAuto=center.auto.IsChecked==true;center.auto.IsChecked=!oldAuto;center.Changed();center.feed.Text=fixture;await center.SaveSource();
                         var saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.feed!=fixture||saved.autostart!=oldAuto||center.auto.IsChecked==oldAuto||!center.dirty)throw new Exception("Source save lost setting drafts");
                         await center.Check();if(!center.Get<Button>("InstallUpdate").IsEnabled||!center.update.Text.Contains("UI test"))throw new Exception("Update check state");
                         await center.Save();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.autostart==oldAuto||center.dirty||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Settings save failed");
-                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=10,backups=center.backups.Items.Count,version=center.version.Text}));
+                        if(!center.hotkeysDirty||browserKey.text!="Alt+F6")throw new Exception("Settings save lost shortcut draft");
+                        await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys["browser"][0]!="alt+f6"||center.hotkeysDirty)throw new Exception("Hotkey save failed");
+                        center.hotkeys.SelectedItem=browserKey;await center.ResetHotkey();await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys.ContainsKey("browser"))throw new Exception("Hotkey reset failed");
+                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=16,shortcuts=center.shortcutRows.Count,backups=center.backups.Items.Count,version=center.version.Text}));
                     }catch(Exception error){File.WriteAllText(args[smoke+1],json.Serialize(new{ok=false,error=error.ToString()}));}
-                    finally{center.dirty=false;center.feed.Text=center.savedFeed;center.window.Close();}
+                    finally{center.dirty=false;center.hotkeysDirty=false;center.feed.Text=center.savedFeed;center.window.Close();}
                 };
             }
             app.Run(center.window);return 0;

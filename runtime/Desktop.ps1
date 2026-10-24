@@ -105,6 +105,16 @@ function Render($Text,$Tokens) {
     if($Text -match '@[A-Z_]+@'){throw "Неизвестный параметр шаблона: $($Matches[0])"}; $Text
 }
 function Make-Plan($Payload,$Settings,$Paths) {
+    $catalog=Join-Path $Payload 'shortcuts.json'
+    $keybindings='';$helpRows=''
+    if(Test-Path $catalog){
+        Add-Type -AssemblyName System.Web.Extensions
+        Add-Type -Path (Join-Path $Payload 'Shortcuts.dll')
+        $overrides=if($Settings.PSObject.Properties['hotkeys']){ConvertTo-Json -InputObject $Settings.hotkeys -Depth 10 -Compress}else{'{}'}
+        $keybindings=[DesktopShortcuts]::Render($catalog,$overrides)
+        $helpRows=[DesktopShortcuts]::HelpRows($catalog,$overrides)
+    }
+    if($Settings.hideTaskbar){$helpRows='<tr><td>Win</td><td>Показать / скрыть панель Windows</td></tr>'+$helpRows}
     if(!$MonitorCount){Add-Type -AssemblyName System.Windows.Forms; $script:MonitorCount=[Windows.Forms.Screen]::AllScreens.Count}
     $wm=$Paths['glazewm'];$zb=$Paths['zebar'];$ya=$Paths['yazi'];$al=$Paths['alacritty']
     $tokens=@{PROFILE_F=$ProfileRoot.Replace('\','/');PROFILE_B=$ProfileRoot;WINDOWS_F=$env:WINDIR.Replace('\','/');WINDOWS_B=$env:WINDIR;WMCLI_F=$wm.Replace('\','/');ZEBAR_F=$zb.Replace('\','/');ROOT_F=$Root.Replace('\','/');ROOT_B=$Root}
@@ -124,7 +134,10 @@ function Make-Plan($Payload,$Settings,$Paths) {
             if($dir -eq 'alacritty'){$target=Join-Path $Root 'config\alacritty.toml'}
             $bytes=[IO.File]::ReadAllBytes($f.FullName)
             if($f.Extension -in '.yaml','.toml','.json','.lua','.html','.js','.css','.ps1','.cmd','.txt'){
-                $text=Render ([IO.File]::ReadAllText($f.FullName)) $tokens
+                $raw=[IO.File]::ReadAllText($f.FullName)
+                if($dir -eq 'glazewm'){$raw=$raw.Replace('@KEYBINDINGS@',$keybindings)}
+                if($dir -eq 'zebar' -and $relative -eq 'hypr-dark\help.html'){$raw=$raw.Replace('@SHORTCUT_ROWS@',$helpRows)}
+                $text=Render $raw $tokens
                 if($dir -eq 'glazewm'){
                     $spaces=($Settings.workspaces|ForEach-Object{ $monitor=[Math]::Min([Math]::Max(0,[int]$_.monitor),$MonitorCount-1); "  - {name: '$($_.name)', display_name: '$($_.name) $($_.label.Replace("'","''"))', bind_to_monitor: $monitor, keep_alive: true}"}) -join "`n"
                     $text=[regex]::Replace($text,'(?s)workspaces:\s*.*?(?=\r?\nwindow_rules:)','workspaces:'+"`n"+$spaces+"`n")

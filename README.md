@@ -17,6 +17,19 @@
 установки нажми «Запустить окружение» в «Настройках» или войди в
 Windows заново. Выбор браузера и рабочих пространств находится в «Настройках».
 
+## Горячие клавиши
+
+В центре открой «Горячие клавиши». Найди действие и дважды нажми на его
+сочетание. Введи названия клавиш, например `Alt+E`, `Alt+Ctrl+Left` или
+`Alt+Ctrl+←`; дополнительные варианты разделяй `;`. Пустая строка отключает
+действие. Нажми «Сохранить сочетания»: повторы будут проверены перед применением.
+Сброс выбранного действия или всех сочетаний сначала меняет черновик — его тоже
+нужно сохранить. Подсказка отражает сохранённые назначения.
+
+Это глобальные сочетания окружения. Они используют одинаковые физические клавиши
+EN/RU; назначения хранятся в личных настройках и переносятся при обновлении.
+Клавиши внутри Yazi продолжают использовать его отдельную карту.
+
 ## Обновления и восстановление
 
 GitHub пока не подключён: центр прямо сообщает об отсутствии источника.
@@ -48,6 +61,8 @@ Python 3.11+ для проверки EN/RU и Inno Setup 6.5+.
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\lifecycle.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\installer.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\shortcuts.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\center.ps1
 python .\scripts\sync-russian-keymap.py .\templates\yazi\keymap.toml .\scripts\yazi-26.9.1-default-keymap.toml --check
 ```
 
@@ -59,6 +74,10 @@ python .\scripts\sync-russian-keymap.py .\templates\yazi\keymap.toml .\scripts\y
 Структура: `templates` — конфиги; `src/bar` — изменённая панель thearturca;
 `src/helpers` — исходники дополнений; `runtime` — установка, обновление и откат;
 `installer` — мастер; `tests` — изолированные проверки.
+`shortcuts.json` — действия GlazeWM, стандартные сочетания и подписи. Идентификаторы
+действий должны оставаться стабильными: личные назначения ссылаются на них.
+`Shortcuts.dll` проверяет сочетания и генерирует конфиг и подсказку из одной карты;
+обычному пользователю Python для этого не нужен.
 
 ## Выпуск
 

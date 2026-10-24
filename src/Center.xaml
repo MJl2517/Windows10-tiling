@@ -89,7 +89,7 @@
                 <CheckBox x:Name="Hide" Content="Скрывать нижнюю панель Windows"/><TextBlock Text="Клавиша Win показывает и скрывает панель. Сочетания Win с другими клавишами продолжают работать." Style="{StaticResource Hint}" Margin="30,0,0,8"/>
                 <CheckBox x:Name="Cursor" Content="Использовать курсор Bibata Modern Ice"/>
               </StackPanel></Border>
-              <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Браузер для Alt+B" Style="{StaticResource Heading}"/><TextBlock x:Name="BrowserLabel" Foreground="#9ccfd8" Margin="0,2,0,10"/>
+              <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Браузер" Style="{StaticResource Heading}"/><TextBlock x:Name="BrowserLabel" Foreground="#9ccfd8" Margin="0,2,0,10"/>
                 <TextBox x:Name="Browser" IsReadOnly="True" FontSize="12" AutomationProperties.Name="Выбранный браузер"/><Button x:Name="Browse" Content="Выбрать браузер…" HorizontalAlignment="Left"/>
               </StackPanel></Border>
               <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Рабочие пространства" Style="{StaticResource Heading}"/><TextBlock x:Name="MonitorHint" Style="{StaticResource Hint}" Margin="0,0,0,14"/>
@@ -99,6 +99,25 @@
               </StackPanel></Border>
             </StackPanel></ScrollViewer>
             <Border Grid.Row="1" BorderBrush="#403d52" BorderThickness="0,1,0,0" Padding="0,14,0,18"><DockPanel LastChildFill="True"><Button x:Name="SaveSettings" Content="Сохранить настройки" Style="{StaticResource Primary}" DockPanel.Dock="Right" Margin="18,0,0,0" IsEnabled="False"/><TextBlock x:Name="SettingsState" Text="Все изменения сохранены" Foreground="#908caa" VerticalAlignment="Center"/></DockPanel></Border>
+          </Grid>
+        </TabItem>
+        <TabItem Header="Горячие клавиши">
+          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <StackPanel><TextBlock Text="Горячие клавиши" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="Запуск приложений, управление окнами и пространствами." Style="{StaticResource Hint}" Margin="0,7,0,20"/>
+              <TextBlock Text="Поиск по действию или сочетанию" Margin="0,0,0,7"/><TextBox x:Name="HotkeySearch" AutomationProperties.Name="Поиск горячих клавиш" Margin="0,0,0,14"/>
+              <TextBlock Text="Дважды нажми на сочетание и введи его название: Alt+E или Alt+Ctrl+←. Несколько вариантов разделяй точкой с запятой; пустое поле отключает действие." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+              <TextBlock Text="Одинаковые физические клавиши в EN/RU. Назначения сохраняются при обновлении и появляются в подсказке." Style="{StaticResource Hint}" Margin="0,0,0,16"/>
+            </StackPanel>
+            <Grid Grid.Row="1">
+              <DataGrid x:Name="Hotkeys" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeRows="False" CanUserReorderColumns="False" HeadersVisibility="Column" GridLinesVisibility="None" RowHeaderWidth="0" Background="#1f1d2e" Foreground="#e0def4" BorderThickness="0" SelectionUnit="FullRow" SelectionMode="Single" MinRowHeight="40">
+                <DataGrid.Columns><DataGridTextColumn Header="Раздел" Binding="{Binding group}" IsReadOnly="True" Width="112"/><DataGridTextColumn Header="Действие" Binding="{Binding title}" IsReadOnly="True" Width="*"/><DataGridTextColumn Header="Сочетания" Binding="{Binding text}" Width="240"/></DataGrid.Columns>
+              </DataGrid>
+              <TextBlock x:Name="HotkeysEmpty" Text="Ничего не найдено. Попробуй другое слово." Foreground="#908caa" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
+            </Grid>
+            <Border Grid.Row="2" BorderBrush="#403d52" BorderThickness="0,1,0,0" Padding="0,10,0,18"><StackPanel>
+              <WrapPanel Margin="0,0,0,12"><Button x:Name="ResetHotkey" Content="Сбросить выбранное" IsEnabled="False"/><Button x:Name="ResetHotkeys" Content="Сбросить все…"/></WrapPanel>
+              <DockPanel><Button x:Name="SaveHotkeys" Content="Сохранить сочетания" Style="{StaticResource Primary}" DockPanel.Dock="Right" Margin="18,0,0,0" IsEnabled="False"/><TextBlock x:Name="HotkeysState" Text="Все сочетания сохранены" Foreground="#908caa" VerticalAlignment="Center"/></DockPanel>
+            </StackPanel></Border>
           </Grid>
         </TabItem>
         <TabItem Header="Восстановление">

@@ -9,34 +9,11 @@
 </head>
 <body>
 <header><h1>Горячие клавиши GlazeWM</h1><button id="close" autofocus>Закрыть · Esc</button></header>
-<p>Alt — основной модификатор. H/J/K/L — физические клавиши, независимо от языка.</p>
+<p>Текущие сочетания окружения. Несколько сочетаний в строке — альтернативные клавиши.</p>
 <table>
-<tr><td>Win</td><td>Показать / скрыть нижнюю панель Windows; сочетания Win+клавиша работают как обычно</td></tr>
-<tr><td>Alt + ← / →</td><td>Фокус на соседнее окно, включая другой монитор</td></tr>
-<tr><td>Alt + H / J / K / L</td><td>Фокус влево / вниз / вверх / вправо</td></tr>
-<tr><td>Ctrl + ↑ / ↓ · Alt + ↑ / ↓</td><td>Фокус на окно сверху / снизу</td></tr>
-<tr><td>Alt + Ctrl + ← / →</td><td>Сдвинуть границу окна влево / вправо, шаг 5%</td></tr>
-<tr><td>Alt + Ctrl + ↑ / ↓</td><td>Сдвинуть границу окна вверх / вниз, шаг 5%</td></tr>
-<tr><td>Alt + Shift + B</td><td>Разделить выбранную часть: рядом ↔ друг над другом</td></tr>
-<tr><td>Alt + Shift + ← / →</td><td>Перенести окно на левый / правый монитор и сохранить фокус</td></tr>
-<tr><td>Alt + Shift + Ctrl + ← / ↓ / ↑ / →</td><td>Переместить окно внутри раскладки</td></tr>
-<tr><td>Alt + 1…9</td><td>Перейти на workspace</td></tr>
-<tr><td>Alt + Shift + 1…9</td><td>Отправить окно на workspace, остаться на исходном</td></tr>
-<tr><td>Alt + Enter / Alt + R</td><td>Терминал / список приложений — в текущем пространстве</td></tr>
-<tr><td>Alt + T</td><td>PowerShell в Alacritty — оформление как у Yazi</td></tr>
-<tr><td>Alt + Q / Alt + F</td><td>Закрыть окно / fullscreen и обратно</td></tr>
-<tr><td>Alt + Shift + Q</td><td>Свернуть активное окно</td></tr>
-<tr><td>Alt + V · Alt + Shift + Space</td><td>Переключить floating / tiled</td></tr>
-<tr><td>Alt + B / Alt + E</td><td>Zen / Yazi — в текущем пространстве</td></tr>
-<tr><td>Alt + , / .</td><td>Фокус на левый / правый монитор</td></tr>
-<tr><td>Alt + Shift + , / .</td><td>Перенос между мониторами — альтернативные клавиши</td></tr>
-<tr><td>Alt + Shift + R / W</td><td>Reload конфига / перерисовка окон</td></tr>
-<tr><td>Alt + Shift + P</td><td>Пауза WM для игр; повторное нажатие — продолжить</td></tr>
-<tr><td>Alt + Shift + E</td><td>Выйти из GlazeWM и Zebar</td></tr>
-<tr><td>Alt + Esc</td><td>Меню питания: сон, гибернация, выключение, перезагрузка, блокировка и выход</td></tr>
-<tr><td>Alt + F1</td><td>Эта подсказка</td></tr>
+@SHORTCUT_ROWS@
 </table>
-<footer>1 WEB · 2 DEV · 3 FILES · 4 CHAT · 7 TTRPG — основной монитор. 5 MEDIA · 6 OTHER — второй.<br>Alt+7 — TTRPG для вождения настольных ролевых игр; Alt+Shift+7 — отправить туда окно.<br>Окно в фокусе отмечено голубой рамкой; все окна полностью непрозрачны. Курсор сам между экранами не прыгает.<br>Esc, кнопка «Закрыть» или Alt+Q закрывают подсказку.</footer>
+<footer>Сочетания работают на одинаковых физических клавишах EN/RU.<br>Изменить их можно в центре управления → «Горячие клавиши».<br>Esc и кнопка «Закрыть» закрывают подсказку.</footer>
 <script type="module">
 import { currentWidget } from './zebar.bundle.mjs';
 const close = () => currentWidget().window.tauri.close().catch(console.error);

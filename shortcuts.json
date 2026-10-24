@@ -1,0 +1,564 @@
+[
+  {
+    "id": "power-menu",
+    "group": "Запуск",
+    "title": "Открыть меню питания",
+    "commands": [
+      "shell-exec @PROFILE_F@/.glzr/tools/power-menu/power-menu.exe"
+    ],
+    "bindings": [
+      "alt+escape"
+    ]
+  },
+  {
+    "id": "focus-left",
+    "group": "Фокус",
+    "title": "Выбрать окно слева",
+    "commands": [
+      "focus --direction left"
+    ],
+    "bindings": [
+      "alt+h",
+      "alt+left"
+    ]
+  },
+  {
+    "id": "focus-down",
+    "group": "Фокус",
+    "title": "Выбрать окно снизу",
+    "commands": [
+      "focus --direction down"
+    ],
+    "bindings": [
+      "alt+j",
+      "alt+down",
+      "control+down"
+    ]
+  },
+  {
+    "id": "focus-up",
+    "group": "Фокус",
+    "title": "Выбрать окно сверху",
+    "commands": [
+      "focus --direction up"
+    ],
+    "bindings": [
+      "alt+k",
+      "alt+up",
+      "control+up"
+    ]
+  },
+  {
+    "id": "focus-right",
+    "group": "Фокус",
+    "title": "Выбрать окно справа",
+    "commands": [
+      "focus --direction right"
+    ],
+    "bindings": [
+      "alt+l",
+      "alt+right"
+    ]
+  },
+  {
+    "id": "move-left",
+    "group": "Окна",
+    "title": "Переместить окно влево",
+    "commands": [
+      "move --direction left"
+    ],
+    "bindings": [
+      "alt+shift+control+left"
+    ]
+  },
+  {
+    "id": "move-down",
+    "group": "Окна",
+    "title": "Переместить окно вниз",
+    "commands": [
+      "move --direction down"
+    ],
+    "bindings": [
+      "alt+shift+control+down"
+    ]
+  },
+  {
+    "id": "move-up",
+    "group": "Окна",
+    "title": "Переместить окно вверх",
+    "commands": [
+      "move --direction up"
+    ],
+    "bindings": [
+      "alt+shift+control+up"
+    ]
+  },
+  {
+    "id": "move-right",
+    "group": "Окна",
+    "title": "Переместить окно вправо",
+    "commands": [
+      "move --direction right"
+    ],
+    "bindings": [
+      "alt+shift+control+right"
+    ]
+  },
+  {
+    "id": "resize-left",
+    "group": "Размер",
+    "title": "Сдвинуть границу влево",
+    "commands": [
+      "shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe left"
+    ],
+    "bindings": [
+      "alt+control+left"
+    ]
+  },
+  {
+    "id": "resize-right",
+    "group": "Размер",
+    "title": "Сдвинуть границу вправо",
+    "commands": [
+      "shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe right"
+    ],
+    "bindings": [
+      "alt+control+right"
+    ]
+  },
+  {
+    "id": "resize-up",
+    "group": "Размер",
+    "title": "Сдвинуть границу вверх",
+    "commands": [
+      "shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe up"
+    ],
+    "bindings": [
+      "alt+control+up"
+    ]
+  },
+  {
+    "id": "resize-down",
+    "group": "Размер",
+    "title": "Сдвинуть границу вниз",
+    "commands": [
+      "shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe down"
+    ],
+    "bindings": [
+      "alt+control+down"
+    ]
+  },
+  {
+    "id": "close",
+    "group": "Окна",
+    "title": "Закрыть активное окно",
+    "commands": [
+      "shell-exec @PROFILE_F@/.glzr/tools/close-window/close-window.exe"
+    ],
+    "bindings": [
+      "alt+q"
+    ]
+  },
+  {
+    "id": "minimize",
+    "group": "Окна",
+    "title": "Свернуть активное окно",
+    "commands": [
+      "set-minimized"
+    ],
+    "bindings": [
+      "alt+shift+q"
+    ]
+  },
+  {
+    "id": "fullscreen",
+    "group": "Окна",
+    "title": "Полноэкранный режим",
+    "commands": [
+      "toggle-fullscreen"
+    ],
+    "bindings": [
+      "alt+f"
+    ]
+  },
+  {
+    "id": "floating",
+    "group": "Окна",
+    "title": "Плавающее окно / тайлинг",
+    "commands": [
+      "toggle-floating --centered"
+    ],
+    "bindings": [
+      "alt+v",
+      "alt+shift+space"
+    ]
+  },
+  {
+    "id": "applications",
+    "group": "Запуск",
+    "title": "Открыть список приложений",
+    "commands": [
+      "shell-exec explorer.exe shell:AppsFolder"
+    ],
+    "bindings": [
+      "alt+r"
+    ]
+  },
+  {
+    "id": "terminal",
+    "group": "Запуск",
+    "title": "Открыть терминал",
+    "commands": [
+      "shell-exec @ROOT_F@/RosePineCenter.exe --console"
+    ],
+    "bindings": [
+      "alt+enter",
+      "alt+t"
+    ]
+  },
+  {
+    "id": "tiling-direction",
+    "group": "Окна",
+    "title": "Сменить направление разделения",
+    "commands": [
+      "toggle-tiling-direction"
+    ],
+    "bindings": [
+      "alt+shift+b"
+    ]
+  },
+  {
+    "id": "browser",
+    "group": "Запуск",
+    "title": "Открыть браузер",
+    "commands": [
+      "shell-exec @ROOT_F@/RosePineCenter.exe --browser"
+    ],
+    "bindings": [
+      "alt+b"
+    ]
+  },
+  {
+    "id": "files",
+    "group": "Запуск",
+    "title": "Открыть Yazi",
+    "commands": [
+      "shell-exec @ROOT_F@/RosePineCenter.exe --files"
+    ],
+    "bindings": [
+      "alt+e"
+    ]
+  },
+  {
+    "id": "send-monitor-left",
+    "group": "Мониторы",
+    "title": "Перенести окно на левый монитор",
+    "commands": [
+      "move --workspace-in-direction left",
+      "focus --monitor 0",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+shift+left",
+      "alt+shift+oem_comma"
+    ]
+  },
+  {
+    "id": "send-monitor-right",
+    "group": "Мониторы",
+    "title": "Перенести окно на правый монитор",
+    "commands": [
+      "move --workspace-in-direction right",
+      "focus --monitor 1",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+shift+right",
+      "alt+shift+oem_period"
+    ]
+  },
+  {
+    "id": "focus-monitor-left",
+    "group": "Мониторы",
+    "title": "Выбрать левый монитор",
+    "commands": [
+      "focus --monitor 0"
+    ],
+    "bindings": [
+      "alt+oem_comma"
+    ]
+  },
+  {
+    "id": "focus-monitor-right",
+    "group": "Мониторы",
+    "title": "Выбрать правый монитор",
+    "commands": [
+      "focus --monitor 1"
+    ],
+    "bindings": [
+      "alt+oem_period"
+    ]
+  },
+  {
+    "id": "reload",
+    "group": "Окружение",
+    "title": "Перезагрузить конфигурацию",
+    "commands": [
+      "wm-reload-config"
+    ],
+    "bindings": [
+      "alt+shift+r"
+    ]
+  },
+  {
+    "id": "redraw",
+    "group": "Окружение",
+    "title": "Перерисовать окна",
+    "commands": [
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+shift+w"
+    ]
+  },
+  {
+    "id": "exit",
+    "group": "Окружение",
+    "title": "Завершить GlazeWM",
+    "commands": [
+      "wm-exit"
+    ],
+    "bindings": [
+      "alt+shift+e"
+    ]
+  },
+  {
+    "id": "pause",
+    "group": "Окружение",
+    "title": "Пауза управления окнами",
+    "commands": [
+      "wm-toggle-pause"
+    ],
+    "bindings": [
+      "alt+shift+p"
+    ]
+  },
+  {
+    "id": "help",
+    "group": "Окружение",
+    "title": "Открыть подсказку по клавишам",
+    "commands": [
+      "shell-exec @ZEBAR_F@ start-widget-preset --pack hypr-dark --widget-name help --preset default"
+    ],
+    "bindings": [
+      "alt+f1"
+    ]
+  },
+  {
+    "id": "workspace-1",
+    "group": "Пространства",
+    "title": "Перейти на пространство 1",
+    "commands": [
+      "focus --workspace 1",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+1"
+    ]
+  },
+  {
+    "id": "send-workspace-1",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 1",
+    "commands": [
+      "move --workspace 1"
+    ],
+    "bindings": [
+      "alt+shift+1"
+    ]
+  },
+  {
+    "id": "workspace-2",
+    "group": "Пространства",
+    "title": "Перейти на пространство 2",
+    "commands": [
+      "focus --workspace 2",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+2"
+    ]
+  },
+  {
+    "id": "send-workspace-2",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 2",
+    "commands": [
+      "move --workspace 2"
+    ],
+    "bindings": [
+      "alt+shift+2"
+    ]
+  },
+  {
+    "id": "workspace-3",
+    "group": "Пространства",
+    "title": "Перейти на пространство 3",
+    "commands": [
+      "focus --workspace 3",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+3"
+    ]
+  },
+  {
+    "id": "send-workspace-3",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 3",
+    "commands": [
+      "move --workspace 3"
+    ],
+    "bindings": [
+      "alt+shift+3"
+    ]
+  },
+  {
+    "id": "workspace-4",
+    "group": "Пространства",
+    "title": "Перейти на пространство 4",
+    "commands": [
+      "focus --workspace 4",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+4"
+    ]
+  },
+  {
+    "id": "send-workspace-4",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 4",
+    "commands": [
+      "move --workspace 4"
+    ],
+    "bindings": [
+      "alt+shift+4"
+    ]
+  },
+  {
+    "id": "workspace-5",
+    "group": "Пространства",
+    "title": "Перейти на пространство 5",
+    "commands": [
+      "focus --workspace 5",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+5"
+    ]
+  },
+  {
+    "id": "send-workspace-5",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 5",
+    "commands": [
+      "move --workspace 5"
+    ],
+    "bindings": [
+      "alt+shift+5"
+    ]
+  },
+  {
+    "id": "workspace-6",
+    "group": "Пространства",
+    "title": "Перейти на пространство 6",
+    "commands": [
+      "focus --workspace 6",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+6"
+    ]
+  },
+  {
+    "id": "send-workspace-6",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 6",
+    "commands": [
+      "move --workspace 6"
+    ],
+    "bindings": [
+      "alt+shift+6"
+    ]
+  },
+  {
+    "id": "workspace-7",
+    "group": "Пространства",
+    "title": "Перейти на пространство 7",
+    "commands": [
+      "focus --workspace 7",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+7"
+    ]
+  },
+  {
+    "id": "send-workspace-7",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 7",
+    "commands": [
+      "move --workspace 7"
+    ],
+    "bindings": [
+      "alt+shift+7"
+    ]
+  },
+  {
+    "id": "workspace-8",
+    "group": "Пространства",
+    "title": "Перейти на пространство 8",
+    "commands": [
+      "focus --workspace 8",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+8"
+    ]
+  },
+  {
+    "id": "send-workspace-8",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 8",
+    "commands": [
+      "move --workspace 8"
+    ],
+    "bindings": [
+      "alt+shift+8"
+    ]
+  },
+  {
+    "id": "workspace-9",
+    "group": "Пространства",
+    "title": "Перейти на пространство 9",
+    "commands": [
+      "focus --workspace 9",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+9"
+    ]
+  },
+  {
+    "id": "send-workspace-9",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 9",
+    "commands": [
+      "move --workspace 9"
+    ],
+    "bindings": [
+      "alt+shift+9"
+    ]
+  }
+]
