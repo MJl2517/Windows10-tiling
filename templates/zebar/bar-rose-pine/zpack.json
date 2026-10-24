@@ -1,0 +1,111 @@
+{
+  "$schema": "https://github.com/glzr-io/zebar/raw/v3.1.0/resources/zpack-schema.json",
+  "name": "bar-rose-pine",
+  "version": "0.0.3",
+  "description": "Simple bar with rose-pine theme and komorebi/glazewm workspaces support",
+  "tags": [
+    "workspaces",
+    "komorebi",
+    "rose-pine",
+    "media",
+    "glazewm"
+  ],
+  "previewImages": [
+    "assets\\preview_1.png"
+  ],
+  "repositoryUrl": "https://github.com/thearturca/zebar-rose-pine-bar",
+  "widgets": [
+    {
+      "name": "bar-glazewm",
+      "htmlPath": "./dist/src/widgets/bar/glazewm/index.html",
+      "zOrder": "normal",
+      "shownInTaskbar": false,
+      "focused": false,
+      "resizable": false,
+      "transparent": true,
+      "includeFiles": [
+        "dist/**/*"
+      ],
+      "caching": {
+        "defaultDuration": 604800,
+        "rules": []
+      },
+      "privileges": {
+        "shellCommands": [
+          {
+            "program": "@PROFILE_F@/.glzr/zebar/bar-rose-pine/tools/tray-identity.exe",
+            "argsRegex": "^\\d+:\\d+( \\d+:\\d+)*$"
+          },
+          {
+            "program": "@ROOT_F@/RosePineCenter.exe",
+            "argsRegex": "^$"
+          }
+        ]
+      },
+      "presets": [
+        {
+          "name": "default",
+          "anchor": "top_center",
+          "offsetX": "0px",
+          "offsetY": "0px",
+          "width": "100%",
+          "height": "40px",
+          "monitorSelection": {
+            "type": "all"
+          },
+          "dockToEdge": {
+            "enabled": false,
+            "edge": null,
+            "windowMargin": "0px"
+          }
+        }
+      ]
+    },
+    {
+      "name": "window-panel",
+      "htmlPath": "./dist/src/widgets/window-panel/index.html",
+      "zOrder": "top_most",
+      "shownInTaskbar": false,
+      "focused": false,
+      "resizable": false,
+      "transparent": true,
+      "includeFiles": [
+        "dist/**/*"
+      ],
+      "caching": {
+        "rules": [],
+        "defaultDuration": 604800
+      },
+      "privileges": {
+        "shellCommands": [
+          {
+            "argsRegex": "^(--list( [1-9][0-9]*)*|--(activate|minimize) [1-9][0-9]*)$",
+            "program": "@PROFILE_F@/.glzr/zebar/bar-rose-pine/tools/task-windows.exe"
+          },
+          {
+            "program": "@PROFILE_F@/.glzr/tools/close-window/close-window.exe",
+            "argsRegex": "^--handle [1-9][0-9]*$"
+          }
+        ]
+      },
+      "presets": [
+        {
+          "name": "default",
+          "offsetY": "44px",
+          "width": "700px",
+          "anchor": "top_center",
+          "monitorSelection": {
+            "type": "all"
+          },
+          "dockToEdge": {
+            "edge": null,
+            "windowMargin": "0px",
+            "enabled": false
+          },
+          "height": "320px",
+          "offsetX": "0px"
+        }
+      ]
+    }
+  ]
+}

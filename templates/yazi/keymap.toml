@@ -1,0 +1,728 @@
+# English and Russian physical-key bindings. Regenerate with sync-russian-keymap.py.
+
+[mgr]
+prepend_keymap = [
+  { "on" = "t", "run" = "shell --orphan -- start \"\" \"@ROOT_F@/RosePineCenter.exe\" --console", "desc" = "Открыть PowerShell в текущей папке" },
+  { "on" = "d", "run" = "plugin windows-drag", "desc" = "Перетащить выбранные файлы в браузер" },
+  { "on" = "1", "run" = "plugin mouse-menu digit-1", "desc" = "Диск в меню / вкладка" },
+  { "on" = "2", "run" = "plugin mouse-menu digit-2", "desc" = "Диск в меню / вкладка" },
+  { "on" = "3", "run" = "plugin mouse-menu digit-3", "desc" = "Диск в меню / вкладка" },
+  { "on" = "4", "run" = "plugin mouse-menu digit-4", "desc" = "Диск в меню / вкладка" },
+  { "on" = "5", "run" = "plugin mouse-menu digit-5", "desc" = "Диск в меню / вкладка" },
+  { "on" = "6", "run" = "plugin mouse-menu digit-6", "desc" = "Диск в меню / вкладка" },
+  { "on" = "7", "run" = "plugin mouse-menu digit-7", "desc" = "Диск в меню / вкладка" },
+  { "on" = "8", "run" = "plugin mouse-menu digit-8", "desc" = "Диск в меню / вкладка" },
+  { "on" = "9", "run" = "plugin mouse-menu digit-9", "desc" = "Диск в меню / вкладка" },
+  { "on" = "<Delete>", "run" = "plugin mouse-menu trash", "desc" = "Поместить в корзину" },
+  { "on" = "<S-Delete>", "run" = "plugin mouse-menu delete", "desc" = "Удалить навсегда" },
+  { "on" = "h", "run" = "hidden toggle", "desc" = "Показать / скрыть скрытые файлы" },
+  { "on" = "m", "run" = "plugin mouse-menu menu", "desc" = "Контекстное меню" },
+  { "on" = "<Esc>", "run" = "plugin mouse-menu escape", "desc" = "Закрыть меню / отменить выделение" },
+  { "on" = "<S-Enter>", "run" = "shell 'open-with.exe %s' --orphan", "desc" = "Открыть с помощью: поиск и частые приложения" },
+  { "on" = "<F12>", "run" = "shell 'open-with.exe %s' --orphan", "desc" = "Открыть с помощью: поиск и частые приложения" },
+  { "on" = "O", "run" = "shell 'open-with.exe %s' --orphan", "desc" = "Открыть с помощью: поиск и частые приложения" },
+  { "on" = "<C-o>", "run" = "shell 'open-with.exe %s' --orphan", "desc" = "Открыть с помощью: поиск и частые приложения" },
+  { "on" = "<F2>", "run" = "plugin drives", "desc" = "Выбрать диск (C, Z, USB...)" },
+  { "on" = "<C-l>", "run" = "cd --interactive", "desc" = "Перейти к пути или диску" },
+  { "on" = "o", "run" = "plugin smart-enter", "desc" = "Открыть файл или войти в папку" },
+  { "on" = "<Enter>", "run" = "plugin mouse-menu enter", "desc" = "Открыть файл или войти в папку" },
+  { "on" = "x", "run" = "yank --cut", "desc" = "Вырезать" },
+  { "on" = "c", "run" = "yank", "desc" = "Копировать" },
+  { "on" = "v", "run" = "paste", "desc" = "Вставить" },
+  { "on" = "<Space>", "run" = [
+  "toggle",
+  "arrow 1",
+], "desc" = "Выбрать файл и перейти к следующему" },
+  { "on" = "n", "run" = "create", "desc" = "Создать файл" },
+  { "on" = "N", "run" = "create --dir", "desc" = "Создать папку" },
+  { "on" = "z", "run" = "plugin smart-archive", "desc" = "Распаковать архив или упаковать файлы" },
+  { "on" = "r", "run" = "rename --cursor=before_ext", "desc" = "Переименовать" },
+  { "on" = "q", "run" = "plugin mouse-menu quit", "desc" = "Выйти" },
+  { "on" = "<Backspace>", "run" = "leave", "desc" = "В родительскую папку" },
+  { "on" = "<Left>", "run" = "leave", "desc" = "В родительскую папку" },
+  { "on" = "<Right>", "run" = "enter", "desc" = "Войти в папку" },
+  { "on" = "<Up>", "run" = "plugin mouse-menu up", "desc" = "Предыдущий файл" },
+  { "on" = "<Down>", "run" = "plugin mouse-menu down", "desc" = "Следующий файл" },
+  { "on" = "е", "run" = "shell --orphan -- start \"\" \"@ROOT_F@/RosePineCenter.exe\" --console", "desc" = "[RU alias] Открыть PowerShell в текущей папке" },
+  { "on" = "в", "run" = "plugin windows-drag", "desc" = "[RU alias] Перетащить выбранные файлы в браузер" },
+  { "on" = "р", "run" = "hidden toggle", "desc" = "[RU alias] Показать / скрыть скрытые файлы" },
+  { "on" = "ь", "run" = "plugin mouse-menu menu", "desc" = "[RU alias] Контекстное меню" },
+  { "on" = "Щ", "run" = "shell 'open-with.exe %s' --orphan", "desc" = "[RU alias] Открыть с помощью: поиск и частые приложения" },
+  { "on" = "<C-щ>", "run" = "shell 'open-with.exe %s' --orphan", "desc" = "[RU alias] Открыть с помощью: поиск и частые приложения" },
+  { "on" = "<C-д>", "run" = "cd --interactive", "desc" = "[RU alias] Перейти к пути или диску" },
+  { "on" = "щ", "run" = "plugin smart-enter", "desc" = "[RU alias] Открыть файл или войти в папку" },
+  { "on" = "ч", "run" = "yank --cut", "desc" = "[RU alias] Вырезать" },
+  { "on" = "с", "run" = "yank", "desc" = "[RU alias] Копировать" },
+  { "on" = "м", "run" = "paste", "desc" = "[RU alias] Вставить" },
+  { "on" = "т", "run" = "create", "desc" = "[RU alias] Создать файл" },
+  { "on" = "Т", "run" = "create --dir", "desc" = "[RU alias] Создать папку" },
+  { "on" = "я", "run" = "plugin smart-archive", "desc" = "[RU alias] Распаковать архив или упаковать файлы" },
+  { "on" = "к", "run" = "rename --cursor=before_ext", "desc" = "[RU alias] Переименовать" },
+  { "on" = "й", "run" = "plugin mouse-menu quit", "desc" = "[RU alias] Выйти" },
+  { "on" = "<C-х>", "run" = "escape", "desc" = "[RU alias] Exit visual mode, clear selection, or cancel search" },
+  { "on" = "Й", "run" = "quit --no-cwd-file", "desc" = "[RU alias] Quit without outputting cwd-file" },
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Close the current tab, or quit if it's last" },
+  { "on" = "<C-я>", "run" = "suspend", "desc" = "[RU alias] Suspend the process" },
+  { "on" = "л", "run" = "arrow prev", "desc" = "[RU alias] Previous file" },
+  { "on" = "о", "run" = "arrow next", "desc" = "[RU alias] Next file" },
+  { "on" = [
+  "g",
+  "п",
+], "run" = "arrow top", "desc" = "[RU alias] Go to top" },
+  { "on" = [
+  "п",
+  "g",
+], "run" = "arrow top", "desc" = "[RU alias] Go to top" },
+  { "on" = [
+  "п",
+  "п",
+], "run" = "arrow top", "desc" = "[RU alias] Go to top" },
+  { "on" = "П", "run" = "arrow bot", "desc" = "[RU alias] Go to bottom" },
+  { "on" = "<C-г>", "run" = "arrow -50%", "desc" = "[RU alias] Move cursor up half page" },
+  { "on" = "<C-в>", "run" = "arrow 50%", "desc" = "[RU alias] Move cursor down half page" },
+  { "on" = "<C-и>", "run" = "arrow -100%", "desc" = "[RU alias] Move cursor up one page" },
+  { "on" = "<C-а>", "run" = "arrow 100%", "desc" = "[RU alias] Move cursor down one page" },
+  { "on" = "д", "run" = "enter", "desc" = "[RU alias] Enter the child directory" },
+  { "on" = "Р", "run" = "back", "desc" = "[RU alias] Back to previous directory" },
+  { "on" = "Д", "run" = "forward", "desc" = "[RU alias] Forward to next directory" },
+  { "on" = "<C-ф>", "run" = "toggle_all --state=on", "desc" = "[RU alias] Select all files" },
+  { "on" = "<C-к>", "run" = "toggle_all", "desc" = "[RU alias] Invert selection of all files" },
+  { "on" = "М", "run" = "visual_mode --unset", "desc" = "[RU alias] Enter visual mode (unset mode)" },
+  { "on" = "Л", "run" = "seek -5", "desc" = "[RU alias] Seek up 5 units in the preview" },
+  { "on" = "О", "run" = "seek 5", "desc" = "[RU alias] Seek down 5 units in the preview" },
+  { "on" = "н", "run" = "yank", "desc" = "[RU alias] Yank selected files (copy)" },
+  { "on" = "з", "run" = "paste", "desc" = "[RU alias] Paste yanked files" },
+  { "on" = "З", "run" = "paste --force", "desc" = "[RU alias] Paste yanked files (overwrite if the destination exists)" },
+  { "on" = "Н", "run" = "unyank", "desc" = "[RU alias] Cancel the yank status" },
+  { "on" = "Ч", "run" = "unyank", "desc" = "[RU alias] Cancel the yank status" },
+  { "on" = "В", "run" = "remove --permanently", "desc" = "[RU alias] Permanently delete selected files" },
+  { "on" = "ф", "run" = "create", "desc" = "[RU alias] Create a file (ends with / for directories)" },
+  { "on" = "Ф", "run" = "bulk_create", "desc" = "[RU alias] Bulk create files" },
+  { "on" = "ж", "run" = "shell --interactive", "desc" = "[RU alias] Run a shell command" },
+  { "on" = "Ж", "run" = "shell --block --interactive", "desc" = "[RU alias] Run a shell command (block until finishes)" },
+  { "on" = "ю", "run" = "hidden toggle", "desc" = "[RU alias] Toggle the visibility of hidden files" },
+  { "on" = "ы", "run" = "search --via=fd", "desc" = "[RU alias] Search files by name via fd" },
+  { "on" = "Ы", "run" = "search --via=rg", "desc" = "[RU alias] Search files by content via ripgrep" },
+  { "on" = "<C-ы>", "run" = "escape --search", "desc" = "[RU alias] Cancel the ongoing search" },
+  { "on" = "Я", "run" = "plugin zoxide", "desc" = "[RU alias] Jump to a directory via zoxide" },
+  { "on" = [
+  "m",
+  "ы",
+], "run" = "linemode size", "desc" = "[RU alias] Linemode: size" },
+  { "on" = [
+  "ь",
+  "s",
+], "run" = "linemode size", "desc" = "[RU alias] Linemode: size" },
+  { "on" = [
+  "ь",
+  "ы",
+], "run" = "linemode size", "desc" = "[RU alias] Linemode: size" },
+  { "on" = [
+  "m",
+  "з",
+], "run" = "linemode permissions", "desc" = "[RU alias] Linemode: permissions" },
+  { "on" = [
+  "ь",
+  "p",
+], "run" = "linemode permissions", "desc" = "[RU alias] Linemode: permissions" },
+  { "on" = [
+  "ь",
+  "з",
+], "run" = "linemode permissions", "desc" = "[RU alias] Linemode: permissions" },
+  { "on" = [
+  "m",
+  "и",
+], "run" = "linemode btime", "desc" = "[RU alias] Linemode: btime" },
+  { "on" = [
+  "ь",
+  "b",
+], "run" = "linemode btime", "desc" = "[RU alias] Linemode: btime" },
+  { "on" = [
+  "ь",
+  "и",
+], "run" = "linemode btime", "desc" = "[RU alias] Linemode: btime" },
+  { "on" = [
+  "m",
+  "ь",
+], "run" = "linemode mtime", "desc" = "[RU alias] Linemode: mtime" },
+  { "on" = [
+  "ь",
+  "m",
+], "run" = "linemode mtime", "desc" = "[RU alias] Linemode: mtime" },
+  { "on" = [
+  "ь",
+  "ь",
+], "run" = "linemode mtime", "desc" = "[RU alias] Linemode: mtime" },
+  { "on" = [
+  "m",
+  "щ",
+], "run" = "linemode owner", "desc" = "[RU alias] Linemode: owner" },
+  { "on" = [
+  "ь",
+  "o",
+], "run" = "linemode owner", "desc" = "[RU alias] Linemode: owner" },
+  { "on" = [
+  "ь",
+  "щ",
+], "run" = "linemode owner", "desc" = "[RU alias] Linemode: owner" },
+  { "on" = [
+  "m",
+  "т",
+], "run" = "linemode none", "desc" = "[RU alias] Linemode: none" },
+  { "on" = [
+  "ь",
+  "n",
+], "run" = "linemode none", "desc" = "[RU alias] Linemode: none" },
+  { "on" = [
+  "ь",
+  "т",
+], "run" = "linemode none", "desc" = "[RU alias] Linemode: none" },
+  { "on" = [
+  "c",
+  "с",
+], "run" = "copy path", "desc" = "[RU alias] Copy file path" },
+  { "on" = [
+  "с",
+  "c",
+], "run" = "copy path", "desc" = "[RU alias] Copy file path" },
+  { "on" = [
+  "с",
+  "с",
+], "run" = "copy path", "desc" = "[RU alias] Copy file path" },
+  { "on" = [
+  "c",
+  "С",
+], "run" = "copy url", "desc" = "[RU alias] Copy file URL" },
+  { "on" = [
+  "с",
+  "C",
+], "run" = "copy url", "desc" = "[RU alias] Copy file URL" },
+  { "on" = [
+  "с",
+  "С",
+], "run" = "copy url", "desc" = "[RU alias] Copy file URL" },
+  { "on" = [
+  "c",
+  "в",
+], "run" = "copy dirpath", "desc" = "[RU alias] Copy directory path" },
+  { "on" = [
+  "с",
+  "d",
+], "run" = "copy dirpath", "desc" = "[RU alias] Copy directory path" },
+  { "on" = [
+  "с",
+  "в",
+], "run" = "copy dirpath", "desc" = "[RU alias] Copy directory path" },
+  { "on" = [
+  "c",
+  "В",
+], "run" = "copy dirurl", "desc" = "[RU alias] Copy directory URL" },
+  { "on" = [
+  "с",
+  "D",
+], "run" = "copy dirurl", "desc" = "[RU alias] Copy directory URL" },
+  { "on" = [
+  "с",
+  "В",
+], "run" = "copy dirurl", "desc" = "[RU alias] Copy directory URL" },
+  { "on" = [
+  "c",
+  "а",
+], "run" = "copy filename", "desc" = "[RU alias] Copy filename" },
+  { "on" = [
+  "с",
+  "f",
+], "run" = "copy filename", "desc" = "[RU alias] Copy filename" },
+  { "on" = [
+  "с",
+  "а",
+], "run" = "copy filename", "desc" = "[RU alias] Copy filename" },
+  { "on" = [
+  "c",
+  "т",
+], "run" = "copy name_without_ext", "desc" = "[RU alias] Copy filename without extension" },
+  { "on" = [
+  "с",
+  "n",
+], "run" = "copy name_without_ext", "desc" = "[RU alias] Copy filename without extension" },
+  { "on" = [
+  "с",
+  "т",
+], "run" = "copy name_without_ext", "desc" = "[RU alias] Copy filename without extension" },
+  { "on" = "а", "run" = "filter --smart", "desc" = "[RU alias] Filter files" },
+  { "on" = [
+  ",",
+  "ь",
+], "run" = [
+  "sort mtime --reverse=no",
+  "linemode mtime",
+], "desc" = "[RU alias] Sort by modified time" },
+  { "on" = [
+  "б",
+  "m",
+], "run" = [
+  "sort mtime --reverse=no",
+  "linemode mtime",
+], "desc" = "[RU alias] Sort by modified time" },
+  { "on" = [
+  "б",
+  "ь",
+], "run" = [
+  "sort mtime --reverse=no",
+  "linemode mtime",
+], "desc" = "[RU alias] Sort by modified time" },
+  { "on" = [
+  ",",
+  "Ь",
+], "run" = [
+  "sort mtime --reverse=yes",
+  "linemode mtime",
+], "desc" = "[RU alias] Sort by modified time (reverse)" },
+  { "on" = [
+  "б",
+  "M",
+], "run" = [
+  "sort mtime --reverse=yes",
+  "linemode mtime",
+], "desc" = "[RU alias] Sort by modified time (reverse)" },
+  { "on" = [
+  "б",
+  "Ь",
+], "run" = [
+  "sort mtime --reverse=yes",
+  "linemode mtime",
+], "desc" = "[RU alias] Sort by modified time (reverse)" },
+  { "on" = [
+  ",",
+  "и",
+], "run" = [
+  "sort btime --reverse=no",
+  "linemode btime",
+], "desc" = "[RU alias] Sort by birth time" },
+  { "on" = [
+  "б",
+  "b",
+], "run" = [
+  "sort btime --reverse=no",
+  "linemode btime",
+], "desc" = "[RU alias] Sort by birth time" },
+  { "on" = [
+  "б",
+  "и",
+], "run" = [
+  "sort btime --reverse=no",
+  "linemode btime",
+], "desc" = "[RU alias] Sort by birth time" },
+  { "on" = [
+  ",",
+  "И",
+], "run" = [
+  "sort btime --reverse=yes",
+  "linemode btime",
+], "desc" = "[RU alias] Sort by birth time (reverse)" },
+  { "on" = [
+  "б",
+  "B",
+], "run" = [
+  "sort btime --reverse=yes",
+  "linemode btime",
+], "desc" = "[RU alias] Sort by birth time (reverse)" },
+  { "on" = [
+  "б",
+  "И",
+], "run" = [
+  "sort btime --reverse=yes",
+  "linemode btime",
+], "desc" = "[RU alias] Sort by birth time (reverse)" },
+  { "on" = [
+  ",",
+  "у",
+], "run" = "sort extension --reverse=no", "desc" = "[RU alias] Sort by extension" },
+  { "on" = [
+  "б",
+  "e",
+], "run" = "sort extension --reverse=no", "desc" = "[RU alias] Sort by extension" },
+  { "on" = [
+  "б",
+  "у",
+], "run" = "sort extension --reverse=no", "desc" = "[RU alias] Sort by extension" },
+  { "on" = [
+  ",",
+  "У",
+], "run" = "sort extension --reverse=yes", "desc" = "[RU alias] Sort by extension (reverse)" },
+  { "on" = [
+  "б",
+  "E",
+], "run" = "sort extension --reverse=yes", "desc" = "[RU alias] Sort by extension (reverse)" },
+  { "on" = [
+  "б",
+  "У",
+], "run" = "sort extension --reverse=yes", "desc" = "[RU alias] Sort by extension (reverse)" },
+  { "on" = [
+  ",",
+  "ф",
+], "run" = "sort alphabetical --reverse=no", "desc" = "[RU alias] Sort alphabetically" },
+  { "on" = [
+  "б",
+  "a",
+], "run" = "sort alphabetical --reverse=no", "desc" = "[RU alias] Sort alphabetically" },
+  { "on" = [
+  "б",
+  "ф",
+], "run" = "sort alphabetical --reverse=no", "desc" = "[RU alias] Sort alphabetically" },
+  { "on" = [
+  ",",
+  "Ф",
+], "run" = "sort alphabetical --reverse=yes", "desc" = "[RU alias] Sort alphabetically (reverse)" },
+  { "on" = [
+  "б",
+  "A",
+], "run" = "sort alphabetical --reverse=yes", "desc" = "[RU alias] Sort alphabetically (reverse)" },
+  { "on" = [
+  "б",
+  "Ф",
+], "run" = "sort alphabetical --reverse=yes", "desc" = "[RU alias] Sort alphabetically (reverse)" },
+  { "on" = [
+  ",",
+  "т",
+], "run" = "sort natural --reverse=no", "desc" = "[RU alias] Sort naturally" },
+  { "on" = [
+  "б",
+  "n",
+], "run" = "sort natural --reverse=no", "desc" = "[RU alias] Sort naturally" },
+  { "on" = [
+  "б",
+  "т",
+], "run" = "sort natural --reverse=no", "desc" = "[RU alias] Sort naturally" },
+  { "on" = [
+  ",",
+  "Т",
+], "run" = "sort natural --reverse=yes", "desc" = "[RU alias] Sort naturally (reverse)" },
+  { "on" = [
+  "б",
+  "N",
+], "run" = "sort natural --reverse=yes", "desc" = "[RU alias] Sort naturally (reverse)" },
+  { "on" = [
+  "б",
+  "Т",
+], "run" = "sort natural --reverse=yes", "desc" = "[RU alias] Sort naturally (reverse)" },
+  { "on" = [
+  ",",
+  "ы",
+], "run" = [
+  "sort size --reverse=no",
+  "linemode size",
+], "desc" = "[RU alias] Sort by size" },
+  { "on" = [
+  "б",
+  "s",
+], "run" = [
+  "sort size --reverse=no",
+  "linemode size",
+], "desc" = "[RU alias] Sort by size" },
+  { "on" = [
+  "б",
+  "ы",
+], "run" = [
+  "sort size --reverse=no",
+  "linemode size",
+], "desc" = "[RU alias] Sort by size" },
+  { "on" = [
+  ",",
+  "Ы",
+], "run" = [
+  "sort size --reverse=yes",
+  "linemode size",
+], "desc" = "[RU alias] Sort by size (reverse)" },
+  { "on" = [
+  "б",
+  "S",
+], "run" = [
+  "sort size --reverse=yes",
+  "linemode size",
+], "desc" = "[RU alias] Sort by size (reverse)" },
+  { "on" = [
+  "б",
+  "Ы",
+], "run" = [
+  "sort size --reverse=yes",
+  "linemode size",
+], "desc" = "[RU alias] Sort by size (reverse)" },
+  { "on" = [
+  ",",
+  "к",
+], "run" = "sort random --reverse=no", "desc" = "[RU alias] Sort randomly" },
+  { "on" = [
+  "б",
+  "r",
+], "run" = "sort random --reverse=no", "desc" = "[RU alias] Sort randomly" },
+  { "on" = [
+  "б",
+  "к",
+], "run" = "sort random --reverse=no", "desc" = "[RU alias] Sort randomly" },
+  { "on" = [
+  "g",
+  "р",
+], "run" = "cd ~", "desc" = "[RU alias] Go home" },
+  { "on" = [
+  "п",
+  "h",
+], "run" = "cd ~", "desc" = "[RU alias] Go home" },
+  { "on" = [
+  "п",
+  "р",
+], "run" = "cd ~", "desc" = "[RU alias] Go home" },
+  { "on" = [
+  "g",
+  "с",
+], "run" = "cd ~/.config", "desc" = "[RU alias] Go to ~/.config" },
+  { "on" = [
+  "п",
+  "c",
+], "run" = "cd ~/.config", "desc" = "[RU alias] Go to ~/.config" },
+  { "on" = [
+  "п",
+  "с",
+], "run" = "cd ~/.config", "desc" = "[RU alias] Go to ~/.config" },
+  { "on" = [
+  "g",
+  "в",
+], "run" = "cd ~/Downloads", "desc" = "[RU alias] Go to ~/Downloads" },
+  { "on" = [
+  "п",
+  "d",
+], "run" = "cd ~/Downloads", "desc" = "[RU alias] Go to ~/Downloads" },
+  { "on" = [
+  "п",
+  "в",
+], "run" = "cd ~/Downloads", "desc" = "[RU alias] Go to ~/Downloads" },
+  { "on" = [
+  "g",
+  "е",
+], "run" = "plugin trash", "desc" = "[RU alias] Go to trash bin" },
+  { "on" = [
+  "п",
+  "t",
+], "run" = "plugin trash", "desc" = "[RU alias] Go to trash bin" },
+  { "on" = [
+  "п",
+  "е",
+], "run" = "plugin trash", "desc" = "[RU alias] Go to trash bin" },
+  { "on" = [
+  "п",
+  "<Space>",
+], "run" = "cd --interactive", "desc" = "[RU alias] Jump interactively" },
+  { "on" = [
+  "g",
+  "а",
+], "run" = "follow", "desc" = "[RU alias] Follow hovered symlink" },
+  { "on" = [
+  "п",
+  "f",
+], "run" = "follow", "desc" = "[RU alias] Follow hovered symlink" },
+  { "on" = [
+  "п",
+  "а",
+], "run" = "follow", "desc" = "[RU alias] Follow hovered symlink" },
+  { "on" = [
+  "t",
+  "е",
+], "run" = "tab_create --current", "desc" = "[RU alias] Create a new tab in CWD" },
+  { "on" = [
+  "е",
+  "t",
+], "run" = "tab_create --current", "desc" = "[RU alias] Create a new tab in CWD" },
+  { "on" = [
+  "е",
+  "е",
+], "run" = "tab_create --current", "desc" = "[RU alias] Create a new tab in CWD" },
+  { "on" = [
+  "t",
+  "к",
+], "run" = "tab_rename --interactive", "desc" = "[RU alias] Rename current tab" },
+  { "on" = [
+  "е",
+  "r",
+], "run" = "tab_rename --interactive", "desc" = "[RU alias] Rename current tab" },
+  { "on" = [
+  "е",
+  "к",
+], "run" = "tab_rename --interactive", "desc" = "[RU alias] Rename current tab" },
+  { "on" = "х", "run" = "tab_switch -1 --relative", "desc" = "[RU alias] Switch to previous tab" },
+  { "on" = "ъ", "run" = "tab_switch 1 --relative", "desc" = "[RU alias] Switch to next tab" },
+  { "on" = "Х", "run" = "tab_swap -1", "desc" = "[RU alias] Swap current tab with previous tab" },
+  { "on" = "Ъ", "run" = "tab_swap 1", "desc" = "[RU alias] Swap current tab with next tab" },
+  { "on" = "ц", "run" = "tasks:show", "desc" = "[RU alias] Show task manager" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[tasks]
+prepend_keymap = [
+  { "on" = "<C-х>", "run" = "close", "desc" = "[RU alias] Close task manager" },
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Close task manager" },
+  { "on" = "ц", "run" = "close", "desc" = "[RU alias] Close task manager" },
+  { "on" = "л", "run" = "arrow prev", "desc" = "[RU alias] Previous task" },
+  { "on" = "о", "run" = "arrow next", "desc" = "[RU alias] Next task" },
+  { "on" = "ч", "run" = "cancel", "desc" = "[RU alias] Cancel the task" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[spot]
+prepend_keymap = [
+  { "on" = "<C-х>", "run" = "close", "desc" = "[RU alias] Close the spot" },
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Close the spot" },
+  { "on" = "л", "run" = "arrow prev", "desc" = "[RU alias] Previous line" },
+  { "on" = "о", "run" = "arrow next", "desc" = "[RU alias] Next line" },
+  { "on" = "р", "run" = "swipe prev", "desc" = "[RU alias] Swipe to previous file" },
+  { "on" = "д", "run" = "swipe next", "desc" = "[RU alias] Swipe to next file" },
+  { "on" = [
+  "c",
+  "с",
+], "run" = "copy cell", "desc" = "[RU alias] Copy selected cell" },
+  { "on" = [
+  "с",
+  "c",
+], "run" = "copy cell", "desc" = "[RU alias] Copy selected cell" },
+  { "on" = [
+  "с",
+  "с",
+], "run" = "copy cell", "desc" = "[RU alias] Copy selected cell" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[pick]
+prepend_keymap = [
+  { "on" = "<C-х>", "run" = "close", "desc" = "[RU alias] Cancel pick" },
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Cancel pick" },
+  { "on" = "л", "run" = "arrow prev", "desc" = "[RU alias] Previous option" },
+  { "on" = "о", "run" = "arrow next", "desc" = "[RU alias] Next option" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[input]
+prepend_keymap = [
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Cancel input" },
+  { "on" = "<C-х>", "run" = "escape", "desc" = "[RU alias] Back to normal mode, or cancel input" },
+  { "on" = "ш", "run" = "insert", "desc" = "[RU alias] Enter insert mode" },
+  { "on" = "Ш", "run" = [
+  "move first-char",
+  "insert",
+], "desc" = "[RU alias] Move to the BOL, and enter insert mode" },
+  { "on" = "ф", "run" = "insert --append", "desc" = "[RU alias] Enter append mode" },
+  { "on" = "Ф", "run" = [
+  "move eol",
+  "insert --append",
+], "desc" = "[RU alias] Move to the EOL, and enter append mode" },
+  { "on" = "м", "run" = "visual", "desc" = "[RU alias] Enter visual mode" },
+  { "on" = "к", "run" = "replace", "desc" = "[RU alias] Replace a single character" },
+  { "on" = "М", "run" = [
+  "move bol",
+  "visual",
+  "move eol",
+], "desc" = "[RU alias] Select from BOL to EOL" },
+  { "on" = "<C-Ф>", "run" = [
+  "move eol",
+  "visual",
+  "move bol",
+], "desc" = "[RU alias] Select from EOL to BOL" },
+  { "on" = "<C-У>", "run" = [
+  "move bol",
+  "visual",
+  "move eol",
+], "desc" = "[RU alias] Select from BOL to EOL" },
+  { "on" = "р", "run" = "move -1", "desc" = "[RU alias] Move back a character" },
+  { "on" = "д", "run" = "move 1", "desc" = "[RU alias] Move forward a character" },
+  { "on" = "<C-и>", "run" = "move -1", "desc" = "[RU alias] Move back a character" },
+  { "on" = "<C-а>", "run" = "move 1", "desc" = "[RU alias] Move forward a character" },
+  { "on" = "и", "run" = "backward", "desc" = "[RU alias] Move back to the start of the current or previous word" },
+  { "on" = "И", "run" = "backward wide", "desc" = "[RU alias] Move back to the start of the current or previous WORD" },
+  { "on" = "ц", "run" = "forward", "desc" = "[RU alias] Move forward to the start of the next word" },
+  { "on" = "Ц", "run" = "forward wide", "desc" = "[RU alias] Move forward to the start of the next WORD" },
+  { "on" = "у", "run" = "forward --end-of-word", "desc" = "[RU alias] Move forward to the end of the current or next word" },
+  { "on" = "У", "run" = "forward wide --end-of-word", "desc" = "[RU alias] Move forward to the end of the current or next WORD" },
+  { "on" = "<A-и>", "run" = "backward lean", "desc" = "[RU alias] Move back to the start of the current or previous word" },
+  { "on" = "<A-а>", "run" = "forward lean --end-of-word", "desc" = "[RU alias] Move forward to the end of the current or next word" },
+  { "on" = "<C-ф>", "run" = "move bol", "desc" = "[RU alias] Move to the BOL" },
+  { "on" = "<C-у>", "run" = "move eol", "desc" = "[RU alias] Move to the EOL" },
+  { "on" = "<C-р>", "run" = "backspace", "desc" = "[RU alias] Delete the character before the cursor" },
+  { "on" = "<C-в>", "run" = "backspace --under", "desc" = "[RU alias] Delete the character under the cursor" },
+  { "on" = "<C-г>", "run" = "kill bol", "desc" = "[RU alias] Kill backwards to the BOL" },
+  { "on" = "<C-л>", "run" = "kill eol", "desc" = "[RU alias] Kill forwards to the EOL" },
+  { "on" = "<C-ц>", "run" = "kill backward", "desc" = "[RU alias] Kill backwards to the start of the current word" },
+  { "on" = "<A-в>", "run" = "kill forward", "desc" = "[RU alias] Kill forwards to the end of the current word" },
+  { "on" = "в", "run" = "delete --cut", "desc" = "[RU alias] Cut selected characters" },
+  { "on" = "В", "run" = [
+  "delete --cut",
+  "move eol",
+], "desc" = "[RU alias] Cut until EOL" },
+  { "on" = "с", "run" = "delete --cut --insert", "desc" = "[RU alias] Cut selected characters, and enter insert mode" },
+  { "on" = "С", "run" = [
+  "delete --cut --insert",
+  "move eol",
+], "desc" = "[RU alias] Cut until EOL, and enter insert mode" },
+  { "on" = "ы", "run" = [
+  "delete --cut --insert",
+  "move 1",
+], "desc" = "[RU alias] Cut current character, and enter insert mode" },
+  { "on" = "Ы", "run" = [
+  "move bol",
+  "delete --cut --insert",
+  "move eol",
+], "desc" = "[RU alias] Cut from BOL until EOL, and enter insert mode" },
+  { "on" = "ч", "run" = [
+  "delete --cut",
+  "move 1 --in-operating",
+], "desc" = "[RU alias] Cut current character" },
+  { "on" = "н", "run" = "yank", "desc" = "[RU alias] Copy selected characters" },
+  { "on" = "з", "run" = "paste", "desc" = "[RU alias] Paste copied characters after the cursor" },
+  { "on" = "З", "run" = "paste --before", "desc" = "[RU alias] Paste copied characters before the cursor" },
+  { "on" = "г", "run" = [
+  "undo",
+  "casefy lower",
+], "desc" = "[RU alias] Undo, or lowercase if in visual mode" },
+  { "on" = "Г", "run" = "casefy upper", "desc" = "[RU alias] Uppercase" },
+  { "on" = "<C-к>", "run" = "redo", "desc" = "[RU alias] Redo the last operation" },
+  { "on" = "л", "run" = "recall -1", "desc" = "[RU alias] Recall previous input" },
+  { "on" = "о", "run" = "recall 1", "desc" = "[RU alias] Recall next input" },
+  { "on" = "<C-з>", "run" = "recall -1", "desc" = "[RU alias] Recall previous input" },
+  { "on" = "<C-т>", "run" = "recall 1", "desc" = "[RU alias] Recall next input" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[confirm]
+prepend_keymap = [
+  { "on" = "<C-х>", "run" = "close", "desc" = "[RU alias] Cancel the confirm" },
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Cancel the confirm" },
+  { "on" = "т", "run" = "close", "desc" = "[RU alias] Cancel the confirm" },
+  { "on" = "н", "run" = "close --submit", "desc" = "[RU alias] Submit the confirm" },
+  { "on" = "л", "run" = "arrow prev", "desc" = "[RU alias] Previous line" },
+  { "on" = "о", "run" = "arrow next", "desc" = "[RU alias] Next line" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[cmp]
+prepend_keymap = [
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Cancel completion" },
+  { "on" = "<A-л>", "run" = "arrow prev", "desc" = "[RU alias] Previous item" },
+  { "on" = "<A-о>", "run" = "arrow next", "desc" = "[RU alias] Next item" },
+  { "on" = "<C-з>", "run" = "arrow prev", "desc" = "[RU alias] Previous item" },
+  { "on" = "<C-т>", "run" = "arrow next", "desc" = "[RU alias] Next item" },
+  { "on" = "Ё", "run" = "help", "desc" = "[RU alias] Open help" },
+]
+
+
+[help]
+prepend_keymap = [
+  { "on" = "<C-х>", "run" = "escape", "desc" = "[RU alias] Enter normal mode, or hide help menu" },
+  { "on" = "<C-с>", "run" = "close", "desc" = "[RU alias] Close help menu" },
+  { "on" = "л", "run" = "arrow prev", "desc" = "[RU alias] Previous line" },
+  { "on" = "о", "run" = "arrow next", "desc" = "[RU alias] Next line" },
+  { "on" = "<C-з>", "run" = "arrow prev", "desc" = "[RU alias] Previous line" },
+  { "on" = "<C-т>", "run" = "arrow next", "desc" = "[RU alias] Next line" },
+]

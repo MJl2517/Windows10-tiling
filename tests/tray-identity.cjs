@@ -1,0 +1,10 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ts=require('../src/bar/node_modules/typescript');
+const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/bar/src/features/tray-identity.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const scope={exports:{}};vm.runInNewContext(code,scope);const key=scope.exports.stableTrayKey;
+assert.equal(key('exe:c:\\program files\\glzr.io\\glazewm\\glazewm.exe|0'),'exe:rpd:glazewm|0');
+assert.equal(key('exe:c:\\Профиль тест\\packages\\glazewm\\3.10.1\\PFiles64\\glzr.io\\GlazeWM\\glazewm.exe|0'),'exe:rpd:glazewm|0');
+assert.equal(key('exe:c:/apps/packages/zebar/3.3.1/PFiles/zebar.exe|1'),'exe:rpd:zebar|1');
+assert.equal(key('exe:c:/apps/chatgpt.exe|2'),'exe:c:/apps/chatgpt.exe|2');
+assert.equal(key('tip:nvidia|0'),'tip:nvidia|0');
+console.log('PASS: tray preferences survive legacy paths and version changes');

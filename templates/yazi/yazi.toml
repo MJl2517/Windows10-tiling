@@ -1,0 +1,9 @@
+[mgr]
+show_hidden = false
+mouse_events = [ "click", "scroll", "touch", "move", "drag" ]
+
+[opener]
+open = [{ run = 'powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File "@PROFILE_F@/AppData/Roaming/yazi/config/open-file.ps1" -Files %s', orphan = true, for = "windows", desc = "Открыть в Windows" }]
+
+[open]
+prepend_rules = [{ url = "*", use = "open" }]

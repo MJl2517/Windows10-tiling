@@ -1,0 +1,215 @@
+general:
+  startup_commands: ['shell-exec @ZEBAR_F@', 'shell-exec @PROFILE_F@/.glzr/tools/tacky-borders/tacky-borders.exe', 'shell-exec @PROFILE_F@/.glzr/tools/taskbar-toggle/taskbar-toggle.exe']
+  shutdown_commands: ['shell-exec @PROFILE_F@/.glzr/tools/taskbar-toggle/taskbar-toggle.exe --stop', 'shell-exec taskkill /IM zebar.exe /F', 'shell-exec taskkill /IM tacky-borders.exe /F']
+  config_reload_commands: []
+  focus_follows_cursor: false
+  toggle_workspace_on_refocus: false
+  cursor_jump:
+    enabled: false
+    trigger: monitor_focus
+  hide_method: cloak
+  show_all_in_taskbar: false
+
+gaps:
+  scale_with_dpi: true
+  inner_gap: 8px
+  # 40px bar + 8px gap, scaled with monitor DPI; no AppBar hot-reload drift.
+  outer_gap: {top: 48px, right: 8px, bottom: 8px, left: 8px}
+
+window_effects:
+  focused_window:
+    border: {enabled: false, color: '#94a9c9'}
+    transparency: {enabled: false, opacity: '100%'}
+  other_windows:
+    border: {enabled: false, color: '#454b57'}
+    transparency: {enabled: false, opacity: '100%'}
+
+window_behavior:
+  initial_state: tiling
+  state_defaults:
+    floating: {centered: true, shown_on_top: false}
+    fullscreen: {maximized: false, shown_on_top: false}
+
+workspaces:
+  - {name: '1', display_name: '1 WEB', bind_to_monitor: 0, keep_alive: true}
+  - {name: '2', display_name: '2 DEV', bind_to_monitor: 0, keep_alive: true}
+  - {name: '3', display_name: '3 FILES', bind_to_monitor: 0, keep_alive: true}
+  - {name: '4', display_name: '4 CHAT', bind_to_monitor: 0, keep_alive: true}
+  - {name: '5', display_name: '5 MEDIA', bind_to_monitor: 1, keep_alive: true}
+  - {name: '6', display_name: '6 OTHER', bind_to_monitor: 1, keep_alive: true}
+  - {name: '7', display_name: '7 TTRPG', bind_to_monitor: 0, keep_alive: true}
+  - {name: '8'}
+  - {name: '9'}
+
+window_rules:
+  - commands: ['set-floating --centered=true --shown-on-top=true']
+    match:
+      - window_process: {equals: Center}
+        window_title: {equals: 'Rose Pine Desktop'}
+  # Native dialogs must retain Windows DPI sizing and their original placement.
+  - commands: [ignore]
+    match:
+      - window_class: {regex: '^(#32770|OperationStatusWindow|MsiDialogCloseClass)$'}
+
+  - commands: [ignore]
+    match:
+      # Screenshot overlays must keep their native screen coordinates.
+      - window_process: {equals: Lightshot}
+      - window_process: {equals: tacky-borders}
+      - window_process: {equals: zebar}
+        window_title: {not_equals: 'Zebar - hypr-dark / help'}
+      - window_process: {regex: '^PowerToys\.(CommandPalette|Peek|ColorPicker|CropAndLock|QuickAccess)'}
+      - window_title: {equals: Command Palette}
+        window_class: {equals: WinUIDesktopWin32WindowClass}
+      - window_process: {regex: '^wallpaper(32|64)$'}
+      # Only actual installed game executables; never match all java/Unity/Unreal windows.
+      - window_process: {regex: '^(PlateUp|Supermarket Together|Aurelia|Expedition33_Steam|SandFall-Win64-Shipping|Marvel|Marvel-Win64-Shipping|SlayTheSpire|Fall of Avalon|We Were Here)$'}
+      - window_process: {regex: '^javaw?$'}
+        window_title: {equals: Slay the Spire}
+
+  - commands: ['set-floating --centered=true --shown-on-top=true']
+    match:
+      - window_process: {equals: yazi-drag}
+
+  - commands: ['set-floating --centered=true --shown-on-top=true']
+    match:
+      - window_process: {equals: power-menu}
+
+  # Custom palettes remain managed floating windows.
+  - commands: ['set-floating --centered=true --shown-on-top=true']
+    match:
+      - window_process: {equals: powershell}
+        window_title: {equals: 'Yazi — Открыть с помощью'}
+      - window_process: {equals: tacky-borders}
+      - window_process: {equals: zebar}
+        window_title: {equals: 'Zebar - hypr-dark / help'}
+  - commands: [set-floating]
+    match:
+      - window_process: {regex: '^(CalculatorApp|Calculator|calc|SystemSettings)$'}
+      - window_process: {equals: explorer}
+        window_title: {regex: '^(Applications|Приложения)$'}
+      - window_class: {regex: '^(Chrome_WidgetWin_1|MozillaDialogClass)$'}
+        window_title: {regex: '(?i)^(picture.in.picture|картинка в картинке|картинка-в-картинке)$'}
+      # Keep Steam Library tiled; only named Steam dialogs float.
+      - window_process: {regex: '^steam(webhelper)?$'}
+        window_title: {regex: '(?i)^(settings|настройки|friends.*|друзья.*|.* - (properties|свойства)|.*(install|установка|confirmation|подтверждение).*)$'}
+  - commands: [set-floating]
+    on: [title_change]
+    run_once: false
+    match:
+      - window_process: {regex: '^steam(webhelper)?$'}
+        window_title: {regex: '(?i)^(settings|настройки|friends.*|друзья.*|.* - (properties|свойства)|.*(install|установка|confirmation|подтверждение).*)$'}
+
+keybindings:
+  - commands: ['shell-exec @PROFILE_F@/.glzr/tools/power-menu/power-menu.exe']
+    bindings: ['alt+escape']
+  - commands: ['focus --direction left']
+    bindings: ['alt+h', 'alt+left']
+  - commands: ['focus --direction down']
+    bindings: ['alt+j', 'alt+down', 'control+down']
+  - commands: ['focus --direction up']
+    bindings: ['alt+k', 'alt+up', 'control+up']
+  - commands: ['focus --direction right']
+    bindings: ['alt+l', 'alt+right']
+  - commands: ['move --direction left']
+    bindings: ['alt+shift+control+left']
+  - commands: ['move --direction down']
+    bindings: ['alt+shift+control+down']
+  - commands: ['move --direction up']
+    bindings: ['alt+shift+control+up']
+  - commands: ['move --direction right']
+    bindings: ['alt+shift+control+right']
+  # Move the shared boundary in the arrow direction, accounting for the active side.
+  - commands: ['shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe left']
+    bindings: ['alt+control+left']
+  - commands: ['shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe right']
+    bindings: ['alt+control+right']
+  - commands: ['shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe up']
+    bindings: ['alt+control+up']
+  - commands: ['shell-exec @PROFILE_F@/.glzr/tools/resize-window/resize-window.exe down']
+    bindings: ['alt+control+down']
+  # Wallpaper Engine needs its own close button to commit the selected wallpaper.
+  - commands: ['shell-exec @PROFILE_F@/.glzr/tools/close-window/close-window.exe']
+    bindings: ['alt+q']
+  - commands: [set-minimized]
+    bindings: ['alt+shift+q']
+  - commands: [toggle-fullscreen]
+    bindings: ['alt+f']
+  - commands: ['toggle-floating --centered']
+    bindings: ['alt+v', 'alt+shift+space']
+  - commands: ['shell-exec explorer.exe shell:AppsFolder']
+    bindings: ['alt+r']
+  - commands: ['shell-exec @ROOT_F@/RosePineCenter.exe --console']
+    bindings: ['alt+enter']
+  - commands: ['shell-exec @ROOT_F@/RosePineCenter.exe --console']
+    bindings: ['alt+t']
+  - commands: [toggle-tiling-direction]
+    bindings: ['alt+shift+b']
+  - commands: ['shell-exec @ROOT_F@/RosePineCenter.exe --browser']
+    bindings: ['alt+b']
+  - commands: ['shell-exec @ROOT_F@/RosePineCenter.exe --files']
+    bindings: ['alt+e']
+  # Move keeps source focus by default; explicitly focus the destination monitor.
+  - commands: ['move --workspace-in-direction left', 'focus --monitor 0', 'wm-redraw']
+    bindings: ['alt+shift+left', 'alt+shift+oem_comma']
+  - commands: ['move --workspace-in-direction right', 'focus --monitor 1', 'wm-redraw']
+    bindings: ['alt+shift+right', 'alt+shift+oem_period']
+  - commands: ['focus --monitor 0']
+    bindings: ['alt+oem_comma']
+  - commands: ['focus --monitor 1']
+    bindings: ['alt+oem_period']
+  - commands: [wm-reload-config]
+    bindings: ['alt+shift+r']
+  - commands: [wm-redraw]
+    bindings: ['alt+shift+w']
+  - commands: [wm-exit]
+    bindings: ['alt+shift+e']
+  - commands: [wm-toggle-pause]
+    bindings: ['alt+shift+p']
+  - commands: ['shell-exec @ZEBAR_F@ start-widget-preset --pack hypr-dark --widget-name help --preset default']
+    bindings: ['alt+f1']
+
+  - commands: ['focus --workspace 1', 'wm-redraw']
+    bindings: ['alt+1']
+  - commands: ['move --workspace 1']
+    bindings: ['alt+shift+1']
+
+  - commands: ['focus --workspace 2', 'wm-redraw']
+    bindings: ['alt+2']
+  - commands: ['move --workspace 2']
+    bindings: ['alt+shift+2']
+
+  - commands: ['focus --workspace 3', 'wm-redraw']
+    bindings: ['alt+3']
+  - commands: ['move --workspace 3']
+    bindings: ['alt+shift+3']
+
+  - commands: ['focus --workspace 4', 'wm-redraw']
+    bindings: ['alt+4']
+  - commands: ['move --workspace 4']
+    bindings: ['alt+shift+4']
+
+  - commands: ['focus --workspace 5', 'wm-redraw']
+    bindings: ['alt+5']
+  - commands: ['move --workspace 5']
+    bindings: ['alt+shift+5']
+
+  - commands: ['focus --workspace 6', 'wm-redraw']
+    bindings: ['alt+6']
+  - commands: ['move --workspace 6']
+    bindings: ['alt+shift+6']
+
+  - commands: ['focus --workspace 7', 'wm-redraw']
+    bindings: ['alt+7']
+  - commands: ['move --workspace 7']
+    bindings: ['alt+shift+7']
+
+  - commands: ['focus --workspace 8', 'wm-redraw']
+    bindings: ['alt+8']
+  - commands: ['move --workspace 8']
+    bindings: ['alt+shift+8']
+
+  - commands: ['focus --workspace 9', 'wm-redraw']
+    bindings: ['alt+9']
+  - commands: ['move --workspace 9']
+    bindings: ['alt+shift+9']

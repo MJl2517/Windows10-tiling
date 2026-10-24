@@ -1,0 +1,53 @@
+{
+  "$schema": "https://github.com/glzr-io/zebar/raw/v3.3.1/resources/zpack-schema.json",
+  "name": "hypr-dark",
+  "version": "1.1.0",
+  "description": "Minimal local GlazeWM bar. No CDN, weather, location lookup or shell privileges.",
+  "tags": [
+    "topbar"
+  ],
+  "previewImages": [],
+  "repositoryUrl": "",
+  "widgets": [
+    {
+      "name": "help",
+      "htmlPath": "./help.html",
+      "zOrder": "normal",
+      "shownInTaskbar": true,
+      "focused": true,
+      "resizable": false,
+      "transparent": false,
+      "includeFiles": [
+        "*.html",
+        "*.css",
+        "*.js",
+        "*.mjs"
+      ],
+      "caching": {
+        "defaultDuration": 604800,
+        "rules": []
+      },
+      "privileges": {
+        "shellCommands": []
+      },
+      "presets": [
+        {
+          "name": "default",
+          "anchor": "center",
+          "offsetX": "0px",
+          "offsetY": "0px",
+          "width": "840px",
+          "height": "800px",
+          "monitorSelection": {
+            "type": "primary"
+          },
+          "dockToEdge": {
+            "enabled": false,
+            "edge": null,
+            "windowMargin": "0px"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "webview2": {
+    "url": "https://go.microsoft.com/fwlink/p/?LinkId=2124703",
+    "sha256": "f414de01c4680f0bb0694d1ea7803c6968f3a81bf6bad01b89bfc65dce14c2a2",
+    "note": "Microsoft Evergreen bootstrapper, pinned by SHA-256 on 2026-10-24; refreshed only in a new tested release. Existing runtime is reused."
+  }
+}

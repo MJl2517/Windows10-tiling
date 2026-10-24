@@ -1,0 +1,50 @@
+[window]
+title = "Yazi"
+dynamic_title = false
+decorations = "None"
+opacity = 0.93
+padding = { x = 8, y = 6 }
+dimensions = { columns = 0, lines = 0 }
+
+[font]
+normal = { family = "JetBrainsMono Nerd Font Mono", style = "Regular" }
+size = 12.0
+
+[colors]
+transparent_background_colors = true
+
+[colors.primary]
+background = "#191724"
+foreground = "#e0def4"
+
+[colors.normal]
+black = "#26233a"
+red = "#eb6f92"
+green = "#31748f"
+yellow = "#f6c177"
+blue = "#9ccfd8"
+magenta = "#c4a7e7"
+cyan = "#ebbcba"
+white = "#e0def4"
+
+[colors.bright]
+black = "#6e6a86"
+red = "#eb6f92"
+green = "#31748f"
+yellow = "#f6c177"
+blue = "#9ccfd8"
+magenta = "#c4a7e7"
+cyan = "#ebbcba"
+white = "#e0def4"
+
+[keyboard]
+bindings = [{ key = "Enter", mods = "Shift", mode = "Alt", chars = "\u001b[13;2u" }]
+
+[terminal]
+shell = { program = '@YAZI_B@' }
+
+[env]
+SHELL = '@WINDOWS_B@\System32\cmd.exe'
+YAZI_CONFIG_HOME = '@PROFILE_B@\AppData\Roaming\yazi\config'
+YAZI_FILE_ONE = '@FILE_B@'
+PATH = '@TOOLS_PATH@'

@@ -1,0 +1,9 @@
+/build/
+/dist/
+/cache/
+/test-results/
+/src/bar/node_modules/
+/src/bar/dist/
+*.log
+*.user
+__pycache__/

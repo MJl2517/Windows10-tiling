@@ -1,0 +1,14 @@
+import "./index.css";
+import { render } from "solid-js/web";
+import { createSignal } from "solid-js";
+import type { GlazeWmOutput } from "zebar";
+import { WindowPanel } from "./features/window-panel";
+const calls: string[] = [];
+Object.assign(window, { panelCalls: calls });
+const win = (handle: number, title: string, processName: string, active = false, minimized = false) => ({ type: "window", id: `window-${handle}`, handle, title, processName, hasFocus: active, state: { type: minimized ? "minimized" : "tiling" } });
+const windows = [win(1, "Сценарий кампании — Yazi", "Yazi", true), win(2, "Правила — Zen Browser", "Zen", false, true), win(3, "Заметки — Блокнот", "Notepad")];
+const [wm, setWm] = createSignal({ allWindows: windows, currentMonitor: { id: "monitor-1" }, displayedWorkspace: { name: "3" }, allWorkspaces: [{ name: "7", displayName: "7 TTRPG", children: [windows[0]] }, { name: "1", displayName: "1 WEB", children: [windows[1], windows[2]] }], runCommand: async (command: string, id?: string) => { calls.push(`${command}:${id ?? ""}`); } } as unknown as GlazeWmOutput);
+const [extra, setExtra] = createSignal([{ handle: 4, title: "Игра вне управления WM", processName: "Game", icon: "", active: false, minimized: false }]);
+Object.assign(window, { removeWindow: () => setWm({ ...wm(), allWindows: wm().allWindows.filter(win => win.handle !== 3) }), setNativeActive: () => setExtra([{ ...extra()[0]!, active: true }]) });
+document.body.style.cssText = "width:700px;height:320px;background:#110f19";
+render(() => <WindowPanel preview wm={wm()} tasks={extra()} record={command => calls.push(command)} />, document.getElementById("root")!);

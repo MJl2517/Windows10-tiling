@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-250: 250ms;
+  --default-transition-duration: var(--duration-250);
+  --default-transition-timing-function: var(--ease-ios);
+  --color-rose-pine-base: hsl(246deg, 24%, 17%);
+  --color-rose-pine-surface: hsl(248deg, 24%, 20%);
+  --color-rose-pine-overlay: hsl(248deg, 21%, 26%);
+  --color-rose-pine-muted: hsl(249deg, 12%, 47%);
+  --color-rose-pine-subtle: hsl(248deg, 15%, 61%);
+  --color-rose-pine-text: hsl(245deg, 50%, 91%);
+  --color-rose-pine-love: hsl(343deg, 76%, 68%);
+  --color-rose-pine-gold: hsl(35deg, 88%, 72%);
+  --color-rose-pine-rose: hsl(2deg, 66%, 75%);
+  --color-rose-pine-pine: hsl(197deg, 48%, 47%);
+  --color-rose-pine-foam: hsl(189deg, 43%, 73%);
+  --color-rose-pine-iris: hsl(267deg, 57%, 78%);
+  --color-rose-pine-highlight-low: hsl(245deg, 22%, 20%);
+  --color-rose-pine-highlight-med: hsl(247deg, 16%, 30%);
+  --color-rose-pine-highlight-high: hsl(249deg, 15%, 38%);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+body {
+  font-family:
+    "Cascadia Mono", "Consolas",
+    ui-monospace,
+    monospace;
+  font-size: 13px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+.tray { display: inline-flex; align-items: center; gap: 2px; height: 28px; min-width: 0; }
+.tray-icons { display: flex; align-items: center; gap: 2px; max-width: 216px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.tray-icons::-webkit-scrollbar { display: none; }
+.tray-icons.tray-editing { max-width: 288px; }
+.tray-icon, .tray-control { position: relative; flex: 0 0 24px; width: 24px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 5px; padding: 3px; background: transparent; color: var(--color-rose-pine-text); cursor: pointer; }
+.tray-icon img { width: 18px; height: 18px; object-fit: contain; }
+.tray-icon:hover, .tray-control:hover, .tray-control-active { background: var(--color-rose-pine-highlight-med); color: var(--color-rose-pine-gold); }
+.tray-icon:focus-visible, .tray-control:focus-visible { outline: 1px solid var(--color-rose-pine-gold); outline-offset: -1px; }
+.tray-icon-hidden img { opacity: .35; }
+.tray-draggable { cursor: grab; touch-action: none; user-select: none; }
+.tray-dragging { opacity: .5; cursor: grabbing; }
+.tray-drop-target { box-shadow: inset 0 0 0 1px var(--color-rose-pine-gold); }
+.tray-mark { position: absolute; right: 0; bottom: 0; font: bold 10px "Segoe UI", sans-serif; color: var(--color-rose-pine-gold); text-shadow: 0 0 3px var(--color-rose-pine-base); }
+
+.window-panel-trigger { cursor: pointer; min-width: 120px; display: flex; justify-content: center; }
+.window-panel { display: none; height: calc(100% - 8px); margin: 4px; padding: 16px; box-sizing: border-box; border: 1px solid #6e6a86; border-radius: 16px; background: rgba(25,23,36,.93); color: #e0def4; font: 13px "Segoe UI", sans-serif; }
+.window-panel-visible { display: flex; flex-direction: column; }
+.window-panel header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; font-size: 15px; font-weight: 600; }
+.window-panel-hint { color: #908caa; font-size: 11px; font-weight: 400; }
+.window-panel-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow-y: auto; align-content: start; scrollbar-width: thin; scrollbar-color: #6e6a86 #191724; }
+.window-task { display: flex; align-items: center; gap: 10px; min-width: 0; height: 64px; border: 1px solid #403d52; border-radius: 10px; background: #26233a; color: #e0def4; padding: 9px 10px; text-align: left; cursor: pointer; transition: background .12s, border-color .12s; }
+.window-task:hover, .window-task:focus-visible { background: #403d52; border-color: #c4a7e7; outline: none; }
+.window-task-active { border-color: #c4a7e7; background: #39314b; box-shadow: inset 3px 0 #c4a7e7; }
+.window-task-minimized img { opacity: .6; }
+.window-task img, .window-task-fallback { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+.window-task-fallback { display: grid; place-items: center; border-radius: 7px; background: #403d52; color: #c4a7e7; font-size: 20px; }
+.window-task-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.window-task-text strong, .window-task-text > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.window-task-text strong { font-weight: 600; }
+.window-task-text > span { font-size: 11px; color: #c3bfd5; }
+.window-task-workspace { color: #9ccfd8; font-size: 10px; max-width: 60px; flex-shrink: 0; }
+.window-panel-empty { color: #908caa; grid-column: 1 / -1; margin: 0; padding: 16px; text-align: center; }
+.window-panel-error { color: #eb6f92; font-size: 11px; margin: 8px 0 0; }
+.window-task { touch-action: none; user-select: none; }
+.window-task img { pointer-events: none; }
+.window-task-dragging { opacity: .55; cursor: grabbing; border-style: dashed; }
+.window-task-menu { position: fixed; z-index: 10; width: 194px; padding: 5px; border: 1px solid #6e6a86; border-radius: 9px; background: #26233a; box-shadow: 0 6px 16px #0005; }
+.window-task-menu button { display: block; width: 100%; border: 0; border-radius: 5px; padding: 8px; background: transparent; color: #e0def4; text-align: left; font-size: 12px; cursor: pointer; }
+.window-task-menu button:hover, .window-task-menu button:focus-visible { background: #403d52; outline: none; }
+.window-task-menu button:disabled { opacity: .4; cursor: default; }
+.window-task-menu .window-task-close { color: #eb6f92; }

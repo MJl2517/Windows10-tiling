@@ -1,0 +1,122 @@
+[
+  {
+    "id": "glazewm",
+    "version": "3.10.1",
+    "url": "https://github.com/glzr-io/glazewm/releases/download/v3.10.1/standalone-glazewm-v3.10.1-x64.msi",
+    "kind": "msi",
+    "entry": "**/cli/glazewm.exe",
+    "component": "desktop",
+    "sha256": "ad4122dd4420690e502e7df3ce8d1e4772bf1246cc815db0dd2aaac0e4dc583f",
+    "extension": ".msi"
+  },
+  {
+    "id": "zebar",
+    "version": "3.3.1",
+    "url": "https://github.com/glzr-io/zebar/releases/download/v3.3.1/zebar-v3.3.1-opt1-x64.msi",
+    "kind": "msi",
+    "entry": "**/zebar.exe",
+    "component": "desktop",
+    "sha256": "1d5584be8def58f828d55ed09cee52fe80fdd60ea118141f37963aa80e902c28",
+    "extension": ".msi"
+  },
+  {
+    "id": "borders",
+    "version": "1.6.0",
+    "url": "https://github.com/luke-you/tacky-borders/releases/download/v1.6.0/tacky-borders-v1.6.0.zip",
+    "kind": "zip",
+    "entry": "**/tacky-borders.exe",
+    "component": "borders",
+    "sha256": "eb75ad4b6b22935f6ceb2e12e36c55bcdf907176953eb47ec7038e4b60a48f23",
+    "extension": ".zip"
+  },
+  {
+    "id": "yazi",
+    "version": "26.9.1",
+    "url": "https://github.com/sxyazi/yazi/releases/download/v26.9.1/yazi-x86_64-pc-windows-msvc.zip",
+    "kind": "zip",
+    "entry": "**/yazi.exe",
+    "component": "files",
+    "sha256": "7c033e5f2de6355fd03d865319053fc97db780275974ed17653c057f5d0f8d21",
+    "extension": ".zip"
+  },
+  {
+    "id": "alacritty",
+    "version": "0.17.0",
+    "url": "https://github.com/alacritty/alacritty/releases/download/v0.17.0/Alacritty-v0.17.0-portable.exe",
+    "kind": "exe",
+    "entry": "alacritty.exe",
+    "component": "files",
+    "sha256": "5ad70ddc5c2a2bfe84084a2c4c73558e9360914f035a902d7a69277be7249f1f",
+    "extension": ".exe"
+  },
+  {
+    "id": "poppler",
+    "version": "26.07.0-0",
+    "url": "https://github.com/oschwartz10612/poppler-windows/releases/download/v26.07.0-0/Release-26.07.0-0.zip",
+    "kind": "zip",
+    "entry": "**/pdftoppm.exe",
+    "component": "files",
+    "sha256": "a711b0563b06edc488583d28198b6734c5a494afbbd1b9d87d3d2866062fb7e2",
+    "extension": ".zip"
+  },
+  {
+    "id": "chafa",
+    "version": "1.18.3",
+    "url": "https://hpjansson.org/chafa/releases/static/chafa-1.18.3-1-x86_64-windows.zip",
+    "kind": "zip",
+    "entry": "**/chafa.exe",
+    "component": "files",
+    "sha256": "3d7b43cab1c9d9116024ab48664db8910e3eabf0912720828d5e7ad1b80194fa",
+    "extension": ".zip"
+  },
+  {
+    "id": "file",
+    "version": "2.51.0.windows.1",
+    "url": "https://github.com/git-for-windows/git/releases/download/v2.51.0.windows.1/PortableGit-2.51.0-64-bit.7z.exe",
+    "kind": "sfx",
+    "entry": "usr/bin/file.exe",
+    "component": "files",
+    "sha256": "a09b275d51ed3e829128e04cf4168fb54896cf6234bb30fecb8dc96a2bd321fa",
+    "extension": ".exe"
+  },
+  {
+    "id": "archive",
+    "version": "26.05",
+    "url": "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-x64.msi",
+    "kind": "msi",
+    "entry": "**/7z.exe",
+    "component": "files",
+    "sha256": "3fe4ab99fa15629c652944309a2b2bc6e41fc933fc6b63f5df1ebcf3aea68263",
+    "extension": ".msi"
+  },
+  {
+    "id": "fonts",
+    "version": "3.5.1",
+    "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.zip",
+    "kind": "zip",
+    "entry": "JetBrainsMonoNerdFontMono-Regular.ttf",
+    "component": "files",
+    "sha256": "fab782a66f7d3019da64f6572db9fc5d3a4bcb19f9fa13e2d8a62e3693d6396e",
+    "extension": ".zip"
+  },
+  {
+    "id": "conpty",
+    "version": "1.25.260930003",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windows.console.conpty/1.25.260930003/microsoft.windows.console.conpty.1.25.260930003.nupkg",
+    "kind": "zip",
+    "entry": "runtimes/win-x64/native/conpty.dll",
+    "component": "files",
+    "sha256": "02b07b349af66d801159bdf9e440d4a1ce78bb951f37fc8609731665afdae7ee",
+    "extension": ".zip"
+  },
+  {
+    "id": "cursor",
+    "version": "2.0.7",
+    "url": "https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice-Windows.zip",
+    "kind": "zip",
+    "entry": "Bibata-Modern-Ice-Large-Windows/Pointer.cur",
+    "component": "cursor",
+    "sha256": "0045e40324da5b540b3bee260f53d0792df62be9cdef91655a024ae9f151bd04",
+    "extension": ".zip"
+  }
+]

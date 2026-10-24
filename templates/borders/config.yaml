@@ -1,0 +1,41 @@
+watch_config_changes: true
+enable_logging: true
+enable_ipc_server: true
+rendering_backend: Legacy
+
+global:
+  border_width: 3
+  border_offset: 1
+  border_radius: 8
+  border_z_order: BelowWindow
+  follow_native_border: true
+  initialize_delay: 200
+  unminimize_delay: 150
+  active_color: '#9ec5ff'
+  inactive_color: '#00000000'
+  komorebi_colors:
+    enabled: false
+  animations:
+    enabled: false
+  effects:
+    enabled: false
+
+window_rules:
+  - match: Class
+    name: Windows.UI.Core.CoreWindow
+    enabled: false
+  - match: Class
+    name: XamlExplorerHostIslandWindow
+    enabled: false
+  - match: Process
+    name: '^(tacky-borders|zebar|Lightshot|wallpaper32|wallpaper64)$'
+    strategy: Regex
+    enabled: false
+  - match: Process
+    name: '^(PlateUp|Supermarket Together|Aurelia|Expedition33_Steam|SandFall-Win64-Shipping|Marvel|Marvel-Win64-Shipping|SlayTheSpire|Fall of Avalon|We Were Here)$'
+    strategy: Regex
+    enabled: false
+  - match: Title
+    name: '^(Picture.in.Picture|Картинка в картинке|Slay the Spire)$'
+    strategy: Regex
+    enabled: false
