@@ -59,6 +59,7 @@ window_rules:
       - window_process: {equals: zebar}
         window_title: {not_equals: 'Zebar - hypr-dark / help'}
       - window_process: {regex: '^PowerToys\.(CommandPalette|Peek|ColorPicker|CropAndLock|QuickAccess)'}
+      - window_process: {equals: Microsoft.CmdPal.UI}
       - window_title: {equals: Command Palette}
         window_class: {equals: WinUIDesktopWin32WindowClass}
       - window_process: {regex: '^wallpaper(32|64)$'}

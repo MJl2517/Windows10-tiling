@@ -82,6 +82,10 @@
               <TextBlock Text="Настройки" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="Выбери, как работает твоё окружение." Style="{StaticResource Hint}" Margin="0,7,0,24"/>
               <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Компоненты" Style="{StaticResource Heading}"/>
                 <CheckBox x:Name="Desktop" Content="Управление окнами и верхняя панель" ToolTip="GlazeWM и панель Rosé Pine"/><CheckBox x:Name="Files" Content="Файловый менеджер Yazi и терминал"/><CheckBox x:Name="Borders" Content="Обводка активного окна"/>
+                <CheckBox x:Name="Palette" Content="Палитра команд PowerToys"/>
+                <TextBlock Text="Win+Alt+Пробел — стандартный вызов в EN/RU. Требуется Windows 10 2004+. Если PowerToys отсутствует, установится полный набор Microsoft PowerToys. Существующие настройки сохраняются; при отключении компонента PowerToys остаётся на ПК." Style="{StaticResource Hint}" Margin="30,0,0,8"/>
+                <WrapPanel><Button x:Name="OpenPalette" Content="Открыть палитру"/><Button x:Name="PaletteSettings" Content="Настройки палитры"/></WrapPanel>
+                <TextBlock Text="Палитра должна быть включена в PowerToys. Её сочетание и оформление меняются в настройках самой палитры." Style="{StaticResource Hint}" Margin="0,0,0,8"/>
                 <Button x:Name="StartDesktop" Content="Запустить окружение" HorizontalAlignment="Left" ToolTip="Запустить включённые компоненты с сохранёнными настройками"/>
               </StackPanel></Border>
               <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Запуск и оформление" Style="{StaticResource Heading}"/>

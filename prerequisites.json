@@ -1,4 +1,11 @@
 {
+  "powertoys": {
+    "version": "0.102.2933.0",
+    "url": "https://github.com/microsoft/PowerToys/releases/download/v0.102.2933.0/PowerToysUserSetup-0.102.2933.0-x64.exe",
+    "sha256": "ec0fd364ae1689a5e8fbefb46bad5c274c7bf0fbe9e828e14c88b44432ada816",
+    "minBuild": 19041,
+    "note": "Per-user Microsoft installer; reuse existing PowerToys with Command Palette. Never remove or overwrite its settings."
+  },
   "webview2": {
     "url": "https://go.microsoft.com/fwlink/p/?LinkId=2124703",
     "sha256": "f414de01c4680f0bb0694d1ea7803c6968f3a81bf6bad01b89bfc65dce14c2a2",

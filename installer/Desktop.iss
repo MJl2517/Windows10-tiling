@@ -36,6 +36,7 @@ Name: "custom"; Description: "Выбрать компоненты"; Flags: iscus
 Name: "desktop"; Description: "GlazeWM и панель Rosé Pine"; Types: full
 Name: "files"; Description: "Yazi, терминал и предпросмотр файлов"; Types: full
 Name: "borders"; Description: "Обводка активного окна"; Types: full
+Name: "palette"; Description: "Палитра команд Microsoft PowerToys (Win+Alt+Пробел)"; Types: full; MinVersion: 10.0.19041
 [Tasks]
 Name: "hide"; Description: "Скрывать панель Windows; переключать клавишей Win"; Flags: unchecked
 Name: "cursor"; Description: "Установить курсор Bibata Modern Ice"; Flags: unchecked

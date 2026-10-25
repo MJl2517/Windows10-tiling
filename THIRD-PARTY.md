@@ -18,6 +18,7 @@
 | JetBrains Mono Nerd Font | https://github.com/ryanoasis/nerd-fonts — SIL OFL-1.1 |
 | ConPTY | https://github.com/microsoft/terminal — MIT |
 | Bibata | https://github.com/ful1e5/Bibata_Cursor — GPL-3.0 |
+| Microsoft PowerToys / Command Palette | https://github.com/microsoft/PowerToys — MIT; официальный установщик, версия и SHA-256 в prerequisites.json. Устанавливается отдельно для текущего пользователя; существующая установка используется повторно, настройки и само приложение при удалении сборки сохраняются. |
 
 Node-зависимости панели перечислены и зафиксированы в `src/bar/package-lock.json`.
 Их исходные уведомления включаются сборщиком в `licenses/npm-NOTICES.txt`.

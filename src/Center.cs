@@ -30,7 +30,7 @@ class Center {
     static string root;
     static JavaScriptSerializer json=new JavaScriptSerializer(){MaxJsonLength=16000000};
     Window window;TextBlock status,version,update,health;TextBox feed,browser;DataGrid spaces;
-    CheckBox desktop,files,borders,auto,hide,cursor,check;Grid actions;ListBox backups,conflicts;Dictionary<string,object> latest;
+    CheckBox desktop,files,borders,palette,auto,hide,cursor,check;Grid actions;ListBox backups,conflicts;Dictionary<string,object> latest;
     bool loading,dirty,busy,closingAllowed,hotkeysDirty;int monitors=1;string savedFeed="";
     ShortcutDefinition[] definitions;ObservableCollection<ShortcutRow> shortcutRows;DataGrid hotkeys;Dictionary<string,string[]> savedHotkeys;
     string Catalog {get{return Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"shortcuts.json");}}
@@ -68,6 +68,8 @@ class Center {
     void LoadSettings(){
         loading=true;var s=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));
         desktop.IsChecked=Array.IndexOf(s.components,"desktop")>=0;files.IsChecked=Array.IndexOf(s.components,"files")>=0;borders.IsChecked=Array.IndexOf(s.components,"borders")>=0;
+        palette.IsChecked=Array.IndexOf(s.components,"palette")>=0;palette.IsEnabled=Convert.ToInt32(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion","CurrentBuildNumber","0"))>=19041;
+        Get<Button>("OpenPalette").IsEnabled=palette.IsChecked==true;Get<Button>("PaletteSettings").IsEnabled=palette.IsChecked==true;
         auto.IsChecked=s.autostart;hide.IsChecked=s.hideTaskbar;cursor.IsChecked=s.cursor;check.IsChecked=s.checkAtLogon;
         browser.Text=s.browser;savedFeed=s.feed??"";feed.Text=savedFeed;spaces.ItemsSource=new ObservableCollection<Space>(s.workspaces);
         savedHotkeys=s.hotkeys??new Dictionary<string,string[]>();
@@ -113,12 +115,12 @@ class Center {
     }
     async Task Save(){
         if(!spaces.CommitEdit(DataGridEditingUnit.Cell,true)||!spaces.CommitEdit(DataGridEditingUnit.Row,true))throw new Exception("Проверь значения в таблице рабочих пространств.");
-        var components=new List<string>();if(desktop.IsChecked==true)components.Add("desktop");if(files.IsChecked==true)components.Add("files");if(borders.IsChecked==true)components.Add("borders");
+        var components=new List<string>();if(desktop.IsChecked==true)components.Add("desktop");if(files.IsChecked==true)components.Add("files");if(borders.IsChecked==true)components.Add("borders");if(palette.IsChecked==true)components.Add("palette");
         if(components.Count==0)throw new Exception("Выбери хотя бы один компонент");
         if(browser.Text.Length>0&&!File.Exists(browser.Text))throw new Exception("Файл браузера не найден");
         var rows=(ObservableCollection<Space>)spaces.ItemsSource;foreach(var row in rows){if(String.IsNullOrWhiteSpace(row.label)||row.label.Contains("\n"))throw new Exception("Укажи название рабочего пространства");if(row.monitor<0||row.monitor>=monitors)throw new Exception("Номер монитора должен быть от 1 до "+monitors);}
         var s=new Settings{components=components.ToArray(),autostart=auto.IsChecked==true,hideTaskbar=hide.IsChecked==true,cursor=cursor.IsChecked==true,checkAtLogon=check.IsChecked==true,browser=browser.Text,feed=savedFeed,hotkeys=savedHotkeys,workspaces=new List<Space>(rows).ToArray()};
-        await ApplySettings(s);Clean();Say("Настройки сохранены. Новые параметры терминала применятся при следующем запуске.");
+        await ApplySettings(s);Get<Button>("OpenPalette").IsEnabled=palette.IsChecked==true;Get<Button>("PaletteSettings").IsEnabled=palette.IsChecked==true;Clean();Say("Настройки сохранены. Новые параметры терминала применятся при следующем запуске.");
     }
     void HotkeysChanged(){if(loading)return;hotkeysDirty=true;Get<Button>("SaveHotkeys").IsEnabled=true;Get<TextBlock>("HotkeysState").Text="Есть несохранённые сочетания";Get<TextBlock>("HotkeysState").Foreground=new SolidColorBrush(Color.FromRgb(246,193,119));}
     void CleanHotkeys(){hotkeysDirty=false;Get<Button>("SaveHotkeys").IsEnabled=false;Get<TextBlock>("HotkeysState").Text="Все сочетания сохранены";Get<TextBlock>("HotkeysState").Foreground=new SolidColorBrush(Color.FromRgb(144,140,170));}
@@ -177,7 +179,9 @@ class Center {
         window.Resources["StatusBrush"]=new SolidColorBrush(Color.FromRgb(156,207,216));window.Resources["ErrorBrush"]=new SolidColorBrush(Color.FromRgb(235,111,146));
         version=Get<TextBlock>("Version");status=Get<TextBlock>("Status");update=Get<TextBlock>("Update");feed=Get<TextBox>("Feed");browser=Get<TextBox>("Browser");spaces=Get<DataGrid>("Spaces");actions=Get<Grid>("Actions");backups=Get<ListBox>("Backups");conflicts=Get<ListBox>("Conflicts");health=Get<TextBlock>("Health");
         definitions=DesktopShortcuts.Load(Catalog);hotkeys=Get<DataGrid>("Hotkeys");
-        desktop=Get<CheckBox>("Desktop");files=Get<CheckBox>("Files");borders=Get<CheckBox>("Borders");auto=Get<CheckBox>("Auto");hide=Get<CheckBox>("Hide");cursor=Get<CheckBox>("Cursor");check=Get<CheckBox>("Check");
+        desktop=Get<CheckBox>("Desktop");files=Get<CheckBox>("Files");borders=Get<CheckBox>("Borders");palette=Get<CheckBox>("Palette");auto=Get<CheckBox>("Auto");hide=Get<CheckBox>("Hide");cursor=Get<CheckBox>("Cursor");check=Get<CheckBox>("Check");
+        Bind("OpenPalette",async()=>{await Run("Palette","");Say("Палитра открыта. Если она отключена, включи Command Palette в настройках PowerToys.");});
+        Bind("PaletteSettings",async()=>{await Run("Palette","-PaletteSettings");Say("Открыты настройки палитры: сочетание клавиш и оформление.");});
         Bind("CheckUpdates",Check);Bind("InstallUpdate",async()=>{await Run("Update","");await Refresh();await Check();Say("Обновление установлено. Новая версия центра откроется при следующем запуске.");});
         Bind("SaveHotkeys",SaveHotkeys);Bind("ResetHotkey",ResetHotkey);Bind("ResetHotkeys",ResetHotkeys);
         Bind("SaveSource",SaveSource);Bind("SaveSettings",Save);Bind("CheckHealth",Refresh);
@@ -189,7 +193,7 @@ class Center {
         Bind("Uninstall",async()=>{if(!Confirm("Удалить Rose Pine Desktop?","Будут восстановлены исходные конфиги и системные настройки. Резервные копии и ранее установленные приложения сохранятся.","Удалить окружение",true))return;await Run("Uninstall","");dirty=false;hotkeysDirty=false;feed.Text=savedFeed;closingAllowed=true;string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller);window.Close();});
         Get<Button>("Browse").Click+=(s,e)=>ChooseBrowser((Button)s);
         Get<Button>("PickSource").Click+=(s,e)=>{var dialog=new OpenFileDialog{Filter="Манифест выпуска (*.json)|*.json|Все файлы|*.*"};if(dialog.ShowDialog(window)==true)feed.Text=dialog.FileName;};
-        foreach(var box in new[]{desktop,files,borders,auto,hide,cursor,check})box.Click+=(s,e)=>Changed();
+        foreach(var box in new[]{desktop,files,borders,palette,auto,hide,cursor,check})box.Click+=(s,e)=>Changed();
         browser.TextChanged+=(s,e)=>{BrowserLabel();Changed();};feed.TextChanged+=(s,e)=>SourceChanged();
         Get<TextBox>("HotkeySearch").TextChanged+=(s,e)=>FilterHotkeys();
         hotkeys.CellEditEnding+=(s,e)=>{if(e.EditAction==DataGridEditAction.Commit)HotkeysChanged();};
@@ -215,7 +219,7 @@ class Center {
         for(int i=0;i<args.Length-1;i++)if(args[i]=="--root")root=args[++i];
         try{
             if(Array.IndexOf(args,"--self-test")>=0){var test=json.Deserialize<Settings>("{\"components\":[\"desktop\"],\"workspaces\":[]}");if(test.components[0]!="desktop")throw new Exception("JSON");var data=json.Deserialize<Dictionary<string,object>>("{\"backups\":[\"first\"],\"conflicts\":[],\"modified\":[]}");int count=0;foreach(object item in (IEnumerable)data["backups"])count++;if(count!=1)throw new Exception("Backup lists");return 0;}
-            foreach(var pair in new[]{new[]{"--console","Console"},new[]{"--files","Files"},new[]{"--browser","Browser"},new[]{"--restore-taskbar","RestoreTaskbar"}})if(Array.IndexOf(args,pair[0])>=0){Task.Run(()=>Run(pair[1],"")).GetAwaiter().GetResult();return 0;}
+            foreach(var pair in new[]{new[]{"--console","Console"},new[]{"--files","Files"},new[]{"--browser","Browser"},new[]{"--palette","Palette"},new[]{"--restore-taskbar","RestoreTaskbar"}})if(Array.IndexOf(args,pair[0])>=0){Task.Run(()=>Run(pair[1],"")).GetAwaiter().GetResult();return 0;}
             if(Array.IndexOf(args,"--logon")>=0){Task.Run(()=>Logon()).GetAwaiter().GetResult();return 0;}
             var app=new Application();var center=new Center();center.Build(Array.IndexOf(args,"--smoke-test")<0);if(Array.IndexOf(args,"--hotkeys")>=0)center.Get<TabControl>("Tabs").SelectedIndex=2;
             int smoke=Array.IndexOf(args,"--smoke-test");
@@ -227,6 +231,7 @@ class Center {
                         foreach(int width in new[]{1080,920}){center.window.Width=width;for(int i=0;i<tabs.Items.Count;i++){tabs.SelectedIndex=i;center.window.UpdateLayout();if(((TabItem)tabs.Items[i]).ActualWidth<100)throw new Exception("Navigation clipped");var host=(ContentPresenter)tabs.Template.FindName("PART_SelectedContentHost",tabs);if(host==null||host.Content==null||host.ActualWidth<500)throw new Exception("Page content missing");}}
                         if(((ObservableCollection<Space>)center.spaces.ItemsSource).Count!=9)throw new Exception("Workspaces missing");
                         if(center.Get<Button>("InstallUpdate").IsEnabled||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Initial action state");
+                        if(center.palette.IsChecked!=true||!center.Get<Button>("OpenPalette").IsEnabled||!center.Get<Button>("PaletteSettings").IsEnabled)throw new Exception("Palette component state");
                         string original=center.feed.Text;center.feed.Text="https://example.test/release.json";
                         if(!center.Get<Button>("SaveSource").IsEnabled||center.Get<Button>("CheckUpdates").IsEnabled)throw new Exception("Unsaved source state");
                         center.feed.Text=original;center.Changed();if(!center.dirty||!center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Dirty settings");center.Clean();
@@ -244,12 +249,13 @@ class Center {
                         var saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.feed!=fixture||saved.autostart!=oldAuto||center.auto.IsChecked==oldAuto||!center.dirty)throw new Exception("Source save lost setting drafts");
                         await center.Check();if(!center.Get<Button>("InstallUpdate").IsEnabled||!center.update.Text.Contains("UI test"))throw new Exception("Update check state");
                         await center.Save();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.autostart==oldAuto||center.dirty||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Settings save failed");
+                        if(!saved.components.Contains("palette"))throw new Exception("Palette selection lost");await Run("Palette","");await Run("Palette","-PaletteSettings");
                         if(!center.hotkeysDirty||browserKey.text!="Alt+F6")throw new Exception("Settings save lost shortcut draft");
                         await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys["browser"][0]!="alt+f6"||center.hotkeysDirty)throw new Exception("Hotkey save failed");
                         tabs.SelectedIndex=2;center.hotkeys.SelectedItem=browserKey;center.hotkeys.CurrentCell=new DataGridCellInfo(browserKey,center.hotkeys.Columns[2]);center.hotkeys.ScrollIntoView(browserKey);center.window.UpdateLayout();if(!center.hotkeys.BeginEdit())throw new Exception("Shortcut edit did not start");await center.ResetHotkey();await center.SaveHotkeys();saved=json.Deserialize<Settings>(File.ReadAllText(Path.Combine(root,"settings.json")));if(saved.hotkeys.ContainsKey("browser"))throw new Exception("Hotkey reset failed");
                         center.feed.Text="https://example.test/draft.json";center.auto.IsChecked=oldAuto;center.Changed();browserKey.text="Alt+F7";center.HotkeysChanged();
                         await center.Rollback();if(!center.dirty||!center.hotkeysDirty||browserKey.text!="Alt+F7"||center.auto.IsChecked!=oldAuto||center.feed.Text!="https://example.test/draft.json")throw new Exception("Rollback lost drafts");
-                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=18,shortcuts=center.shortcutRows.Count,backups=center.backups.Items.Count,version=center.version.Text}));
+                        File.WriteAllText(args[smoke+1],json.Serialize(new{ok=true,tabs=tabs.Items.Count,widths=new[]{1080,920},states=20,shortcuts=center.shortcutRows.Count,backups=center.backups.Items.Count,version=center.version.Text}));
                     }catch(Exception error){File.WriteAllText(args[smoke+1],json.Serialize(new{ok=false,error=error.ToString()}));}
                     finally{center.dirty=false;center.hotkeysDirty=false;center.feed.Text=center.savedFeed;center.window.Close();}
                 };

@@ -1,10 +1,10 @@
 ﻿param(
-    [ValidateSet('Install','Apply','Check','Update','Rollback','Status','RestoreTaskbar','Uninstall','Start','Browser','Console','Files','Import')][string]$Action='Status',
+    [ValidateSet('Install','Apply','Check','Update','Rollback','Status','RestoreTaskbar','Uninstall','Start','Browser','Console','Files','Palette','Import')][string]$Action='Status',
     [string]$Root=(Join-Path $env:LOCALAPPDATA 'RosePineDesktop'),
     [string]$Release, [string]$SettingsFile, [string]$Feed, [string]$Result,
     [string]$ProfileRoot, [string]$Cache, [int]$MonitorCount=0, [switch]$Sandbox,
-    [string]$Components='desktop,files,borders', [switch]$HideTaskbar, [switch]$Cursor,
-    [int]$FailAfter=0
+    [string]$Components='desktop,files,borders,palette', [switch]$HideTaskbar, [switch]$Cursor,
+    [int]$FailAfter=0, [switch]$PaletteSettings
 )
 $ErrorActionPreference='Stop'
 $env:PSModulePath=(Join-Path $PSHOME 'Modules')+';'+$env:PSModulePath
@@ -100,6 +100,40 @@ function Ensure-WebView($Payload,$Settings) {
     $process=Start-Process -FilePath $file -ArgumentList '/silent /install' -WindowStyle Hidden -Wait -PassThru
     if($process.ExitCode){throw "Установка WebView2 не завершена: $($process.ExitCode)"}
 }
+function Find-PowerToys {
+    $candidates=New-Object Collections.Generic.List[string]
+    foreach($base in @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall')){
+        foreach($key in Get-ChildItem $base -ErrorAction SilentlyContinue){
+            $entry=Get-ItemProperty $key.PSPath
+            if($entry.PSObject.Properties['DisplayName'] -and $entry.DisplayName -like 'PowerToys*' -and $entry.PSObject.Properties['InstallLocation'] -and $entry.InstallLocation){$candidates.Add((Join-Path $entry.InstallLocation 'PowerToys.exe'))}
+        }
+    }
+    $candidates.Add((Join-Path $env:LOCALAPPDATA 'PowerToys\PowerToys.exe'))
+    $candidates.Add((Join-Path $env:LOCALAPPDATA 'Programs\PowerToys\PowerToys.exe'))
+    $candidates.Add((Join-Path $env:ProgramFiles 'PowerToys\PowerToys.exe'))
+    foreach($file in $candidates){if(Test-Path -LiteralPath $file){return $file}}
+    return ''
+}
+function Ensure-PowerToys($Payload,$Settings) {
+    if($Sandbox -or 'palette' -notin $Settings.components){return ''}
+    $requirement=(Read-Json (Join-Path $Payload 'prerequisites.json')).powertoys
+    if([Environment]::OSVersion.Version.Build -lt $requirement.minBuild){throw 'Палитра PowerToys требует Windows 10 2004 (19041) или новее. Отключи этот компонент для более ранней Windows.'}
+    $runner=Find-PowerToys
+    if($runner){
+        $number=[regex]::Match([Diagnostics.FileVersionInfo]::GetVersionInfo($runner).ProductVersion,'\d+\.\d+\.\d+(?:\.\d+)?').Value
+        if(!$number -or [version]$number -lt [version]'0.90.0'){throw 'Установленная версия PowerToys не содержит Command Palette. Обнови PowerToys или отключи компонент палитры.'}
+        return $runner
+    }
+    $file=Join-Path $Cache ('powertoys-'+$requirement.version+'.exe')
+    Download $requirement.url $file $requirement.sha256
+    $signature=Get-AuthenticodeSignature -LiteralPath $file
+    if($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notlike '*Microsoft Corporation*'){throw 'Не подтверждена подпись Microsoft PowerToys'}
+    $process=Start-Process -FilePath $file -ArgumentList @('/quiet','/norestart') -WindowStyle Hidden -Wait -PassThru
+    if($process.ExitCode -notin 0,3010){throw "Не удалось установить PowerToys: $($process.ExitCode)"}
+    $runner=Find-PowerToys
+    if(!$runner){throw 'PowerToys не найден после установки. Перезапусти Windows, если установщик запросил перезагрузку.'}
+    return $runner
+}
 function Render($Text,$Tokens) {
     foreach($k in $Tokens.Keys){$Text=$Text.Replace('@'+$k+'@',[string]$Tokens[$k])}
     if($Text -match '@[A-Z_]+@'){throw "Неизвестный параметр шаблона: $($Matches[0])"}; $Text
@@ -115,6 +149,7 @@ function Make-Plan($Payload,$Settings,$Paths) {
         $helpRows=[DesktopShortcuts]::HelpRows($catalog,$overrides)
     }
     if($Settings.hideTaskbar){$helpRows='<tr><td>Win</td><td>Показать / скрыть панель Windows</td></tr>'+$helpRows}
+    if('palette' -in $Settings.components){$helpRows='<tr><td>Win+Alt+Пробел</td><td>Палитра команд PowerToys (стандартное сочетание; изменяется в PowerToys)</td></tr>'+$helpRows}
     if(!$MonitorCount){Add-Type -AssemblyName System.Windows.Forms; $script:MonitorCount=[Windows.Forms.Screen]::AllScreens.Count}
     $wm=$Paths['glazewm'];$zb=$Paths['zebar'];$ya=$Paths['yazi'];$al=$Paths['alacritty']
     $tokens=@{PROFILE_F=$ProfileRoot.Replace('\','/');PROFILE_B=$ProfileRoot;WINDOWS_F=$env:WINDIR.Replace('\','/');WINDOWS_B=$env:WINDIR;WMCLI_F=$wm.Replace('\','/');ZEBAR_F=$zb.Replace('\','/');ROOT_F=$Root.Replace('\','/');ROOT_B=$Root}
@@ -227,6 +262,8 @@ function Apply-Payload($Payload,$Settings,[switch]$ImportExisting) {
     if(!$Sandbox -and (![Environment]::Is64BitOperatingSystem -or [Environment]::OSVersion.Version.Build -lt 17763)){throw 'Требуется Windows 10 1809+ x64 или Windows 11 x64'}
     Ensure-WebView $Payload $Settings
     $paths=Packages $Payload $Settings
+    $powerToys=Ensure-PowerToys $Payload $Settings
+    if($powerToys){$paths['powertoys']=$powerToys}
     # Paths always exist for rendering; a disabled component has no files deployed.
     foreach($k in 'glazewm','zebar','yazi','alacritty','file'){if(!$paths[$k]){$paths[$k]=Join-Path $Root ('disabled\'+$k+'.exe')}}
     $plan=Make-Plan $Payload $Settings $paths
@@ -363,6 +400,7 @@ function Previous-Payload($Version) {
 }
 function Run-Start($Settings,$Paths) {
     if($Sandbox){return}
+    if('palette' -in $Settings.components){$runner=Find-PowerToys;if(!$runner){throw 'PowerToys не найден. Сохрани настройки, чтобы установить компонент палитры.'};if(!(Get-Process PowerToys -ErrorAction SilentlyContinue)){Start-Process -FilePath $runner -WindowStyle Hidden}}
     if('desktop' -in $Settings.components){
         if(!(Get-Process glazewm -ErrorAction SilentlyContinue)){Start-Process ($Paths.glazewm.Replace('\cli\','\')) -WindowStyle Hidden}
         else{& $Paths.glazewm command wm-reload-config|Out-Null}
@@ -407,6 +445,7 @@ try{
                 @{ok=$true;version=$(if($s){$s.version}else{'не установлено'});settings=$settings;root=$Root;monitors=$(Add-Type -AssemblyName System.Windows.Forms; @([Windows.Forms.Screen]::AllScreens).Count);backups=@(Get-ChildItem (Join-Path $Root 'backups') -Directory -ErrorAction SilentlyContinue|Select-Object -ExpandProperty Name);conflicts=$conflictRows;components=$(if($s){$s.paths}else{@{}});modified=$modifiedRows;checks=$checks}
             }
             'RestoreTaskbar' {Restore-Taskbar;@{ok=$true;message='Панель Windows восстановлена'}}
+            'Palette' {if('palette' -notin $settings.components){throw 'Включи компонент палитры PowerToys в центре управления'};if(!$Sandbox){if(!(Find-PowerToys)){throw 'PowerToys не найден. Повтори сохранение настроек'};if(!(Get-AppxPackage -Name Microsoft.CommandPalette)){throw 'Command Palette не зарегистрирована. Включи её в настройках PowerToys, затем повтори запуск.'};Start-Process $(if($PaletteSettings){'x-cmdpal://settings/'}else{'x-cmdpal://'})};@{ok=$true}}
             'Uninstall' {
                 $s=Read-Json $stateFile;$base=@(Read-Json (Join-Path $Root 'baseline.json'))
                 $hadWm=@($base|Where-Object{$_.target -eq (Join-Path $ProfileRoot '.glzr\glazewm\config.yaml') -and $_.exists}).Count -gt 0

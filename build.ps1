@@ -38,7 +38,7 @@ if($LASTEXITCODE){throw 'Launcher compile failed'}
 Copy-Item "$repo\build\RosePineCenter.exe" "$payload\Bootstrap.exe" -Force
 $notes=[regex]::Match([IO.File]::ReadAllText("$repo\CHANGELOG.md"),'(?ms)^## '+[regex]::Escape($Version)+'\r?\n(.*?)(?=^## |\z)').Groups[1].Value.Trim()
 if(!$notes){$notes='Rose Pine Desktop '+$Version}
-$manifest=@{schema=1;version=$Version;os=@('Windows 10 1809+ x64','Windows 11 x64');notes=$notes;components=@('desktop','files','borders','cursor')}
+$manifest=@{schema=1;version=$Version;os=@('Windows 10 1809+ x64','Windows 11 x64');notes=$notes;components=@('desktop','files','borders','cursor','palette')}
 [IO.File]::WriteAllText("$payload\release.json",($manifest|ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))
 New-Item -ItemType Directory "$repo\dist" -Force|Out-Null
 Add-Type -AssemblyName System.IO.Compression.FileSystem

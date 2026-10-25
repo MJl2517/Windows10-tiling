@@ -150,6 +150,8 @@ static class TaskbarToggle {
         var state=new WinGesture();if(!state.Key(0x5b,true,false).Consume || !state.Key(0x5b,true,false).Consume || !state.Key(0x5b,false,false).Toggle)throw new Exception("Bare Win failed");
         state=new WinGesture();state.Key(0x5b,true,false);var combo=state.Key(0x45,true,false);
         if(!combo.Consume || !combo.Replay.SequenceEqual(new uint[]{0x5b,0x45}) || state.Key(0x45,false,false).Consume || state.Key(0x5b,false,false).Toggle)throw new Exception("Win+E forwarding failed");
+        state=new WinGesture();state.Key(0x5b,true,false);var alt=state.Key(0x12,true,false);
+        if(!alt.Replay.SequenceEqual(new uint[]{0x5b,0x12})||state.Key(0x20,true,true).Consume||state.Key(0x5b,false,true).Toggle)throw new Exception("Win+Alt+Space forwarding failed");
         state=new WinGesture();if(state.Key(0x5c,true,true).Consume || state.Key(0x5c,false,true).Toggle)throw new Exception("Modified Win failed");
         state=new WinGesture();state.Key(0x5c,true,false);if(!state.Key(0x5c,false,false).Toggle || state.Key(0x41,true,false).Consume)throw new Exception("Right Win failed");
         state=new WinGesture();state.Key(0x5b,true,false);state.Key(0x10,true,false);if(state.Key(0x53,true,true).Consume || state.Key(0x5b,false,true).Toggle)throw new Exception("Win+Shift+S forwarding failed");
