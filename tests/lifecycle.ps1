@@ -19,6 +19,9 @@ function Invoke-Engine($Action,$Extra=@(),[switch]$Fails,[int]$Monitors=1){
 New-Item -ItemType Directory $profile -Force|Out-Null
 $old=Join-Path $profile '.glzr\glazewm\config.yaml';New-Item -ItemType Directory (Split-Path $old) -Force|Out-Null;[IO.File]::WriteAllText($old,'original config')
 $r=Invoke-Engine Install @('-Release',"$Repo\build\payload-$BaseVersion");$results.Add(@{test='clean install';passed=$r.ok})
+$layout=(Get-Content "$TestRoot\settings.json" -Raw|ConvertFrom-Json).workspaces
+Assert (($layout.name -join ',') -eq '1,2,3,4,5,6,7,8,9,0') 'Ten workspace order failed'
+Assert (($layout.label -join ',') -eq 'WEB,DEV,FILES,CHAT,TTRPG,MEDIA,VPN,DOUBLE,OTHER,OTHER') 'Workspace labels failed'
 Assert ((Get-Content $old -Raw) -notmatch 'bind_to_monitor: 1') 'Single monitor fallback failed'
 Assert ((Get-Content $old -Raw) -notmatch '@[A-Z_]+@') 'Unresolved template'
 Assert (!(Get-Content $old -Raw).Contains(([Environment]::GetFolderPath('UserProfile').Replace('\','/')+'/.glzr'))) 'Original user profile leaked'

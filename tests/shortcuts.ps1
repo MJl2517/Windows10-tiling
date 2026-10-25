@@ -8,7 +8,9 @@ $catalog=Join-Path $payload 'shortcuts.json'
 function Assert($test,$message){if(!$test){throw $message}}
 function Reject($text,$message){try{[DesktopShortcuts]::Render($catalog,$text)|Out-Null}catch{return};throw $message}
 $defs=[DesktopShortcuts]::Load($catalog)
-Assert ($defs.Count -eq 49) 'Catalog incomplete'
+Assert ($defs.Count -eq 51) 'Catalog incomplete'
+Assert (($defs|Where-Object id -eq 'workspace-0').bindings[0] -eq 'alt+0') 'Workspace zero missing'
+Assert (($defs|Where-Object id -eq 'send-workspace-0').bindings[0] -eq 'alt+shift+0') 'Move to workspace zero missing'
 $latin='qwertyuiopasdfghjklzxcvbnm'
 $russian=-join @(0x439,0x446,0x443,0x43A,0x435,0x43D,0x433,0x448,0x449,0x437,0x444,0x44B,0x432,0x430,0x43F,0x440,0x43E,0x43B,0x434,0x44F,0x447,0x441,0x43C,0x438,0x442,0x44C|ForEach-Object{[char]$_})
 for($i=0;$i -lt $latin.Length;$i++){

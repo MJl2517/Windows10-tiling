@@ -229,7 +229,7 @@ class Center {
                     try{
                         await center.Refresh();var tabs=center.Get<TabControl>("Tabs");if(tabs.SelectedIndex!=0)throw new Exception("Initial page missing");
                         foreach(int width in new[]{1080,920}){center.window.Width=width;for(int i=0;i<tabs.Items.Count;i++){tabs.SelectedIndex=i;center.window.UpdateLayout();if(((TabItem)tabs.Items[i]).ActualWidth<100)throw new Exception("Navigation clipped");var host=(ContentPresenter)tabs.Template.FindName("PART_SelectedContentHost",tabs);if(host==null||host.Content==null||host.ActualWidth<500)throw new Exception("Page content missing");}}
-                        if(((ObservableCollection<Space>)center.spaces.ItemsSource).Count!=9)throw new Exception("Workspaces missing");
+                        if(((ObservableCollection<Space>)center.spaces.ItemsSource).Count!=10)throw new Exception("Workspaces missing");
                         if(center.Get<Button>("InstallUpdate").IsEnabled||center.Get<Button>("SaveSettings").IsEnabled)throw new Exception("Initial action state");
                         if(center.palette.IsChecked!=true||!center.Get<Button>("OpenPalette").IsEnabled||!center.Get<Button>("PaletteSettings").IsEnabled)throw new Exception("Palette component state");
                         string original=center.feed.Text;center.feed.Text="https://example.test/release.json";
@@ -239,7 +239,7 @@ class Center {
                         await center.Busy(()=>{throw new Exception("test error");});if(center.status.Text!="test error"||!center.actions.IsEnabled)throw new Exception("Error state");
                         await center.Busy(()=>{center.Say("test success");return Task.FromResult(0);});if(center.status.Text!="test success")throw new Exception("Success overwritten");
                         var row=new Space{name="7",monitor=0};if(row.displayMonitor!=1)throw new Exception("Workspace labels");row.displayMonitor=2;if(row.monitor!=1||json.Serialize(row).Contains("displayMonitor"))throw new Exception("Monitor storage");
-                        if(center.shortcutRows.Count!=49||center.Get<Button>("SaveHotkeys").IsEnabled)throw new Exception("Hotkeys initial state");
+                        if(center.shortcutRows.Count!=51||center.Get<Button>("SaveHotkeys").IsEnabled)throw new Exception("Hotkeys initial state");
                         center.Get<TextBox>("HotkeySearch").Text="браузер";if(center.hotkeys.Items.Count!=1)throw new Exception("Hotkey search");center.Get<TextBox>("HotkeySearch").Text="no-such-action";if(center.Get<TextBlock>("HotkeysEmpty").Visibility!=Visibility.Visible)throw new Exception("Hotkey empty state");center.Get<TextBox>("HotkeySearch").Text="";
                         var browserKey=center.shortcutRows.First(x=>x.id=="browser");browserKey.text="Alt+E";center.HotkeysChanged();string settingsBefore=File.ReadAllText(Path.Combine(root,"settings.json"));
                         await center.Busy(center.SaveHotkeys);if(!center.status.Text.Contains("повторяется")||File.ReadAllText(Path.Combine(root,"settings.json"))!=settingsBefore||!center.hotkeysDirty)throw new Exception("Shortcut conflict state");browserKey.text="Alt+F6";

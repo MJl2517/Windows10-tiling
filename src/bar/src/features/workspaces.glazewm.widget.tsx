@@ -47,7 +47,7 @@ export function WorkspacesGlazewmWidget() {
         {(workspace) => (
           <Presence exitBeforeEnter>
             <Show
-              when={workspace().children.length > 0 || workspace().isDisplayed || ["1", "2", "3", "4", "5", "6", "7"].includes(workspace().name)}
+              when={workspace().children.length > 0 || workspace().isDisplayed || ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].includes(workspace().name)}
             >
               <Motion.span
                 class="origin-left inline-flex items-center justify-center h-full w-full py-1"

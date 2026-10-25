@@ -560,5 +560,28 @@
     "bindings": [
       "alt+shift+9"
     ]
+  },
+  {
+    "id": "workspace-0",
+    "group": "Пространства",
+    "title": "Перейти на пространство 0",
+    "commands": [
+      "focus --workspace 0",
+      "wm-redraw"
+    ],
+    "bindings": [
+      "alt+0"
+    ]
+  },
+  {
+    "id": "send-workspace-0",
+    "group": "Пространства",
+    "title": "Отправить окно на пространство 0",
+    "commands": [
+      "move --workspace 0"
+    ],
+    "bindings": [
+      "alt+shift+0"
+    ]
   }
 ]

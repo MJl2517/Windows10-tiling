@@ -1,4 +1,4 @@
-﻿param(
+param(
     [ValidateSet('Install','Apply','Check','Update','Rollback','Status','RestoreTaskbar','Uninstall','Start','Browser','Console','Files','Palette','Import')][string]$Action='Status',
     [string]$Root=(Join-Path $env:LOCALAPPDATA 'RosePineDesktop'),
     [string]$Release, [string]$SettingsFile, [string]$Feed, [string]$Result,
@@ -54,8 +54,8 @@ function Download($Url,$Destination,$Sha) {
 }
 function Default-Settings {
     if(!$MonitorCount){Add-Type -AssemblyName System.Windows.Forms; $script:MonitorCount=[Windows.Forms.Screen]::AllScreens.Count}
-    $names='WEB','DEV','FILES','CHAT','MEDIA','OTHER','TTRPG','8','9'
-    $spaces=@(for($i=0;$i -lt 9;$i++){[pscustomobject]@{name=[string]($i+1);label=$names[$i];monitor=$(if($MonitorCount -gt 1 -and $i -in 4,5){1}else{0})}})
+    $names='WEB','DEV','FILES','CHAT','TTRPG','MEDIA','VPN','DOUBLE','OTHER','OTHER'
+    $spaces=@(for($i=0;$i -lt 10;$i++){[pscustomobject]@{name=[string](($i+1)%10);label=$names[$i];monitor=$(if($MonitorCount -gt 1 -and $i -ge 5){1}else{0})}})
     [pscustomobject]@{components=@($Components.Split(',')|Where-Object{$_});autostart=$true;hideTaskbar=[bool]$HideTaskbar;cursor=[bool]$Cursor;browser='';workspaces=$spaces;feed='';checkAtLogon=$true}
 }
 function Packages($Payload,$Settings) {
