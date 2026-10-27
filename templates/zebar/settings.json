@@ -10,6 +10,11 @@
       "widget": "window-panel",
       "preset": "default",
       "pack": "bar-rose-pine"
+    },
+    {
+      "pack": "bar-rose-pine",
+      "widget": "calendar",
+      "preset": "default"
     }
   ]
 }

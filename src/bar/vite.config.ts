@@ -23,6 +23,7 @@ export default defineConfig({
     outDir,
     rollupOptions: {
       input: {
+        "calendar": resolve(widgetsDir, "calendar", "index.html"),
         "window-panel": resolve(widgetsDir, "window-panel", "index.html"),
         "bar.komorebi": resolve(widgetsDir, "bar/komorebi", "index.html"),
         "bar.glazewm": resolve(widgetsDir, "bar/glazewm", "index.html"),

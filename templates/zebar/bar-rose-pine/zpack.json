@@ -106,6 +106,43 @@
           "offsetX": "0px"
         }
       ]
+    },
+    {
+      "name": "calendar",
+      "htmlPath": "./dist/src/widgets/calendar/index.html",
+      "zOrder": "top_most",
+      "shownInTaskbar": false,
+      "focused": false,
+      "resizable": false,
+      "transparent": true,
+      "includeFiles": [
+        "dist/**/*"
+      ],
+      "caching": {
+        "defaultDuration": 604800,
+        "rules": []
+      },
+      "privileges": {
+        "shellCommands": []
+      },
+      "presets": [
+        {
+          "width": "340px",
+          "offsetX": "-8px",
+          "dockToEdge": {
+            "windowMargin": "0px",
+            "enabled": false,
+            "edge": null
+          },
+          "offsetY": "44px",
+          "name": "default",
+          "height": "408px",
+          "anchor": "top_right",
+          "monitorSelection": {
+            "type": "all"
+          }
+        }
+      ]
     }
   ]
 }

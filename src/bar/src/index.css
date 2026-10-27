@@ -96,3 +96,26 @@ body,
 .window-task-menu button:hover, .window-task-menu button:focus-visible { background: #403d52; outline: none; }
 .window-task-menu button:disabled { opacity: .4; cursor: default; }
 .window-task-menu .window-task-close { color: #eb6f92; }
+
+.pine-calendar-trigger { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.pine-calendar-trigger:hover { color: #f6c177; }
+.pine-calendar-trigger:focus-visible { outline: 1px solid #c4a7e7; border-radius: 4px; outline-offset: 3px; }
+.pine-calendar { display: none; max-width: 332px; margin: 4px; padding: 16px; border: 1px solid #6e6a86; border-radius: 16px; background: rgba(25,23,36,.97); color: #e0def4; font: 13px "Segoe UI", sans-serif; box-shadow: 0 6px 18px #0003; }
+.pine-calendar-visible { display: block; }
+.pine-calendar button { cursor: pointer; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; font: inherit; }
+.pine-calendar button:hover { background: #403d52; }
+.pine-calendar button:focus-visible { outline: 2px solid #c4a7e7; outline-offset: -2px; }
+.pine-calendar-heading { display: flex; align-items: center; justify-content: space-between; color: #908caa; height: 24px; margin-bottom: 8px; }
+.pine-calendar-heading button { font-size: 22px; line-height: 24px; width: 28px; }
+.pine-calendar header { display: flex; align-items: center; justify-content: space-between; height: 36px; margin-bottom: 8px; }
+.pine-calendar header button { width: 32px; height: 32px; font-size: 25px; color: #c4a7e7; }
+.pine-calendar h2 { margin: 0; font-size: 16px; font-weight: 600; text-transform: capitalize; }
+.pine-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.pine-calendar-grid button { height: 32px; min-width: 0; font-size: 13px; }
+.pine-calendar-weekday { display: grid; place-items: center; height: 24px; font-size: 11px; color: #908caa; }
+.pine-calendar-grid .pine-calendar-weekend { color: #ebbcba; }
+.pine-calendar-grid .pine-calendar-outside { color: #6e6a86; }
+.pine-calendar-grid .pine-calendar-today { border-color: #f6c177; color: #f6c177; font-weight: 700; }
+.pine-calendar-grid .pine-calendar-selected { background: #39314b; box-shadow: inset 0 0 0 1px #c4a7e7; }
+.pine-calendar footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #403d52; color: #908caa; font-size: 12px; }
+.pine-calendar footer button { padding: 6px 10px; color: #9ccfd8; background: #26233a; }
