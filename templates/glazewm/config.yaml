@@ -52,6 +52,15 @@ window_rules:
     match:
       - window_class: {regex: '^(#32770|OperationStatusWindow|MsiDialogCloseClass)$'}
 
+  # Installers and custom dialogs should keep the size chosen by the app.
+  - commands: ['set-floating --centered=false']
+    on: [manage, title_change]
+    match:
+      - window_class: {regex: '^(TWizardForm|TSelectLanguageForm|TUninstallProgressForm|MozillaDialogClass)$'}
+      - window_title: {regex: '(?i)^(Installation Wizard|Setup Wizard|Мастер установки)(?:\s+[-–—:]\s*.+)?$'}
+      - window_class: {regex: '^(Chrome_WidgetWin_[01]|Qt[0-9]*QWindowIcon|WinUIDesktopWin32WindowClass|HwndWrapper\[.+\])$'}
+        window_title: {regex: '(?i)^(Open File|Open Folder|Save As|Select Folder|Choose Folder|Confirm(?:ation)?|Открыть файл|Открыть папку|Сохранить как|Выбор папки|Выбрать папку|Подтверждение)$'}
+
   - commands: [ignore]
     match:
       # Screenshot overlays must keep their native screen coordinates.
