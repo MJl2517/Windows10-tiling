@@ -9,24 +9,34 @@ const orderKey = "rose-pine:tray-icon-order:v1";
 export function SystrayWidget(props: { tray?: SystrayOutput | null }) {
   const [hidden, setHidden] = createStoredSignal<string[]>([], () => storageKey);
   const [order, setOrder] = createStoredSignal<string[]>([], () => orderKey);
-  const [identities] = createResource(
+  const [identities, { refetch }] = createResource(
     () => (props.tray?.icons ?? []).map(icon => icon.id).filter(id => /^\d+:\d+$/.test(id)).sort().join(" "),
-    async ids => {
-      if (!ids) return {} as Record<string, string>;
+    async (ids, previous): Promise<Record<string, string | null>> => {
+      if (!ids) return {};
       const fallback = (id: string) => {
         const icon = props.tray?.icons.find(item => item.id === id);
         // ponytail: inaccessible/vanished processes use their label; use provider processPath when available.
         return `tip:${icon?.tooltip.split("\n")[0]?.trim().toLowerCase() || icon?.iconHash}|${id.split(":")[1]}`;
       };
-      let resolved: Record<string, string> = {};
+      let resolved: Record<string, string | null> = {};
       try {
         const result = await shellExec("@PROFILE_F@/.glzr/zebar/bar-rose-pine/tools/tray-identity.exe", ids.split(" "));
         if (result.code !== 0) throw new Error("Tray identity lookup failed");
         const value: unknown = JSON.parse(result.stdout);
-        if (!value || typeof value !== "object" || Array.isArray(value) || !Object.values(value).every(key => typeof key === "string" && key.startsWith("exe:"))) throw new Error("Invalid tray identities");
-        resolved = value as Record<string, string>;
-      } catch (error) { console.warn(error); }
-      return Object.fromEntries(ids.split(" ").flatMap(id => [[id, resolved[id] ?? fallback(id)], ...(resolved[id] ? [[fallback(id), resolved[id]]] : [])]));
+        if (!value || typeof value !== "object" || Array.isArray(value) || !Object.values(value).every(key => key === null || (typeof key === "string" && key.startsWith("exe:")))) throw new Error("Invalid tray identities");
+        resolved = value as Record<string, string | null>;
+      } catch (error) {
+        console.warn(error);
+        resolved = previous.value ?? {};
+      }
+      const lookup: Record<string, string | null> = {};
+      for (const id of ids.split(" ")) {
+        const key = resolved[id];
+        const label = fallback(id);
+        lookup[id] = key === undefined ? label : key;
+        if (key?.startsWith("exe:")) lookup[label] = key;
+      }
+      return lookup;
     },
   );
   const identity = (id: string) => stableTrayKey(identities()?.[id] ?? id);
@@ -45,10 +55,12 @@ export function SystrayWidget(props: { tray?: SystrayOutput | null }) {
   let pointerStart: { id: string; x: number; y: number } | null = null;
   let suppressClick = false;
   const isHidden = (id: string) => hidden().includes(identity(id));
-  const hiddenCount = createMemo(() => props.tray?.icons.filter(icon => isHidden(icon.id)).length ?? 0);
+  // ponytail: GUID icons carry no callback handle here; Zebar must expire those itself.
+  const liveIcons = createMemo(() => (props.tray?.icons ?? []).filter(icon => identities.latest?.[icon.id] !== null));
+  const hiddenCount = createMemo(() => liveIcons().filter(icon => isHidden(icon.id)).length);
   const orderedIcons = createMemo(() => {
     const ranks = new Map(order().map((id, index) => [id, index]));
-    return [...(props.tray?.icons ?? [])].sort((a, b) => (ranks.get(identity(a.id)) ?? ranks.size) - (ranks.get(identity(b.id)) ?? ranks.size));
+    return [...liveIcons()].sort((a, b) => (ranks.get(identity(a.id)) ?? ranks.size) - (ranks.get(identity(b.id)) ?? ranks.size));
   });
   const visibleIcons = createMemo(() => orderedIcons().filter(icon => editing() || expanded() || !isHidden(icon.id)));
   const reorder = (source: string, target: string) => {
@@ -76,6 +88,9 @@ export function SystrayWidget(props: { tray?: SystrayOutput | null }) {
     if (event.key === "Escape") { setEditing(false); setExpanded(false); setDragging(null); setDropTarget(null); pointerStart = null; }
   };
   onMount(() => {
+    // Zebar may emit no event when an app exits without unregistering its icon.
+    const timer = window.setInterval(() => { if (!identities.loading) void refetch(); }, 5000);
+    onCleanup(() => window.clearInterval(timer));
     window.addEventListener("storage", sync);
     window.addEventListener("keydown", escape);
   });
