@@ -16,6 +16,8 @@ $operationStage='initialize'
 $operationBackup=$null
 $operationVersion=$null
 $operationId=$operationStart.ToString('yyyyMMdd-HHmmss-fff')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8)
+$githubFeed='https://github.com/MJl2517/Windows10-tiling/releases/latest/download/release.json'
+$githubApi='https://api.github.com/repos/MJl2517/Windows10-tiling/releases'
 function Read-Json($Path) { $data=ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($Path)); return $data }
 function Write-Json($Path,$Value) {
     [IO.Directory]::CreateDirectory((Split-Path $Path))|Out-Null
@@ -69,6 +71,10 @@ function Download($Url,$Destination,$Sha) {
             $uri=[uri]$Url; if($uri.Scheme -ne 'https'){throw 'Загрузка разрешена только по HTTPS'}
             [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
             $request=[Net.WebRequest]::Create($uri);$request.Timeout=60000
+            if($uri.Host -eq 'api.github.com' -and $uri.AbsolutePath -match '/releases/assets/\d+$'){
+                $request.Accept='application/octet-stream'
+                $request.UserAgent='RosePineDesktop'
+            }
             $response=$request.GetResponse()
             try{if($response.ResponseUri.Scheme -ne 'https'){throw 'Небезопасное перенаправление загрузки'};$inputStream=$response.GetResponseStream();$outputStream=[IO.File]::Create($part);try{$inputStream.CopyTo($outputStream)}finally{$outputStream.Dispose();$inputStream.Dispose()}}finally{$response.Dispose()}
         }
@@ -80,7 +86,7 @@ function Default-Settings {
     if(!$MonitorCount){Add-Type -AssemblyName System.Windows.Forms; $script:MonitorCount=[Windows.Forms.Screen]::AllScreens.Count}
     $names='WEB','DEV','FILES','CHAT','TTRPG','MEDIA','VPN','DOUBLE','OTHER','OTHER'
     $spaces=@(for($i=0;$i -lt 10;$i++){[pscustomobject]@{name=[string](($i+1)%10);label=$names[$i];monitor=$(if($MonitorCount -gt 1 -and $i -ge 5){1}else{0})}})
-    [pscustomobject]@{components=@($Components.Split(',')|Where-Object{$_});autostart=$true;hideTaskbar=[bool]$HideTaskbar;cursor=[bool]$Cursor;browser='';workspaces=$spaces;feed='https://github.com/MJl2517/Windows10-tiling/releases/latest/download/release.json';checkAtLogon=$true}
+    [pscustomobject]@{components=@($Components.Split(',')|Where-Object{$_});autostart=$true;hideTaskbar=[bool]$HideTaskbar;cursor=[bool]$Cursor;browser='';workspaces=$spaces;feed=$githubFeed;checkAtLogon=$true}
 }
 function Packages($Payload,$Settings) {
     $deps=Read-Json (Join-Path $Payload 'dependencies.json'); $paths=@{}
@@ -396,22 +402,34 @@ function Restore-Taskbar {
     $helper=Join-Path $ProfileRoot '.glzr\tools\taskbar-toggle\taskbar-toggle.exe'
     if(Test-Path $helper){$p=Start-Process $helper '--restore' -WindowStyle Hidden -Wait -PassThru;if($p.ExitCode){throw 'Не удалось восстановить панель Windows'}}
 }
+function Read-HttpsJson($Url,$Headers=@{}) {
+    $uri=[uri]$Url
+    if($uri.Scheme -ne 'https'){throw 'Источник обновлений должен использовать HTTPS'}
+    $response=Invoke-WebRequest -Uri $uri -Headers $Headers -UserAgent 'RosePineDesktop' -UseBasicParsing -TimeoutSec 20
+    if($response.BaseResponse.ResponseUri.Scheme -ne 'https'){throw 'Небезопасное перенаправление манифеста'}
+    $content=$response.Content
+    if($content -is [byte[]]){$content=[Text.Encoding]::UTF8.GetString($content)}
+    ConvertFrom-Json -InputObject $content
+}
+function GitHub-AssetUrl($Release,$Name) {
+    $asset=@($Release.assets|Where-Object {$_.name -ceq $Name -and $_.state -eq 'uploaded'})
+    if($asset.Count -ne 1 -or $asset[0].id -notmatch '^\d+$'){throw "В выпуске GitHub отсутствует файл $Name"}
+    "$githubApi/assets/$($asset[0].id)?download=1"
+}
 function Get-Update($Settings) {
     $script:operationStage='read-update-feed'
     if(!$Settings.feed){return @{available=$false;message='Источник обновлений не подключён';current=$(if(Test-Path $stateFile){(Read-Json $stateFile).version}else{'не установлено'})}}
     if([IO.Path]::IsPathRooted($Settings.feed)){$m=Read-Json $Settings.feed}
-    else{
-        $u=[uri]$Settings.feed
-        if($u.Scheme -ne 'https'){throw 'Источник обновлений должен использовать HTTPS'}
-        $response=Invoke-WebRequest -Uri $u -UseBasicParsing -TimeoutSec 20
-        if($response.BaseResponse.ResponseUri.Scheme -ne 'https'){throw 'Небезопасное перенаправление манифеста'}
-        $content=$response.Content
-        if($content -is [byte[]]){$content=[Text.Encoding]::UTF8.GetString($content)}
-        $m=ConvertFrom-Json -InputObject $content
-    }
+    elseif($Settings.feed -eq $githubFeed){
+        $release=Read-HttpsJson "$githubApi/latest"
+        $m=Read-HttpsJson (GitHub-AssetUrl $release 'release.json') @{Accept='application/octet-stream'}
+    }else{$m=Read-HttpsJson $Settings.feed}
     if($m.schema -ne 1 -or $m.version -notmatch '^\d+\.\d+\.\d+$' -or $m.sha256 -notmatch '^[0-9a-fA-F]{64}$'){throw 'Некорректный манифест обновления'}
     if([IO.Path]::IsPathRooted($Settings.feed)){
         if(![IO.Path]::IsPathRooted($m.url) -and !([uri]$m.url).IsAbsoluteUri){$m.url=Join-Path (Split-Path $Settings.feed) $m.url}
+    }elseif($Settings.feed -eq $githubFeed){
+        if($release.tag_name -ne ('v'+$m.version)){throw 'Тег выпуска GitHub не совпадает с версией манифеста'}
+        $m.url=GitHub-AssetUrl $release $m.url
     }else{
         $resolved=New-Object Uri([uri]$Settings.feed,[string]$m.url);if($resolved.Scheme -ne 'https'){throw 'Пакет удалённого источника должен использовать HTTPS'};$m.url=$resolved.AbsoluteUri
     }
