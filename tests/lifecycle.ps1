@@ -14,6 +14,10 @@ function Invoke-Engine($Action,$Extra=@(),[switch]$Fails,[int]$Monitors=1){
     $code=$LASTEXITCODE
     $r=$raw|ConvertFrom-Json
     if($Fails){Assert ($code -ne 0) "Expected failure: $Action"}else{Assert ($code -eq 0) ($raw -join "`n")}
+    Assert ($r.log -and (Test-Path -LiteralPath $r.log)) "Missing operation log: $Action"
+    $log=Get-Content -LiteralPath $r.log -Raw -Encoding UTF8|ConvertFrom-Json
+    Assert ($log.action -eq $Action -and $log.ok -eq !$Fails -and $log.stage) "Wrong operation log: $Action"
+    if($Fails){Assert ($log.error -and $log.detail -and $log.stage -ne 'complete') "Missing failure details: $Action"}
     $r
 }
 New-Item -ItemType Directory $profile -Force|Out-Null
@@ -50,7 +54,9 @@ $before=(Get-FileHash $old).Hash
 $locked=[IO.File]::Open($old,'Open','ReadWrite','None')
 try{Invoke-Engine Update @() -Fails|Out-Null}finally{$locked.Dispose()}
 Assert ((Get-FileHash $old).Hash -eq $before) 'Locked file update changed configuration';$results.Add(@{test='busy file deferred';passed=$true})
-Invoke-Engine Update @('-FailAfter','1') -Fails|Out-Null
+$failure=Invoke-Engine Update @('-FailAfter','1') -Fails
+$failureLog=Get-Content -LiteralPath $failure.log -Raw -Encoding UTF8|ConvertFrom-Json
+Assert ($failureLog.stage -eq 'write-config' -and (Test-Path -LiteralPath $failureLog.backup)) 'Failed update log did not locate the backup'
 Assert ((Get-FileHash $old).Hash -eq $before) 'Failed write was not restored';Assert ((Get-Content "$TestRoot\installed.json" -Raw|ConvertFrom-Json).version -eq $BaseVersion) 'Failed write changed version';$results.Add(@{test='transaction failure recovery';passed=$true})
 $settings.workspaces[4].monitor=1;$settings.workspaces[5].monitor=1;$settings|ConvertTo-Json -Depth 10|Set-Content "$TestRoot\test-settings.json" -Encoding UTF8
 Invoke-Engine Apply @('-SettingsFile',"$TestRoot\test-settings.json") -Monitors 2|Out-Null

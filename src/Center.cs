@@ -40,11 +40,26 @@ class Center {
     static string Engine {get {var s=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(Path.Combine(root,"installed.json")));return Path.Combine((string)s["payload"],"Desktop.ps1");}}
     static async Task<Dictionary<string,object>> Run(string action,string extra) {
         string receipt=Path.Combine(root,"requests",Guid.NewGuid().ToString("N")+".json");Directory.CreateDirectory(Path.GetDirectoryName(receipt));
-        var p=Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),@"WindowsPowerShell\v1.0\powershell.exe"),"-NoProfile -STA -ExecutionPolicy Bypass -File "+Quote(Engine)+" -Action "+action+" -Root "+Quote(root)+" -Result "+Quote(receipt)+" "+extra){UseShellExecute=false,CreateNoWindow=true,WorkingDirectory=Environment.CurrentDirectory});
-        await Task.Run(()=>p.WaitForExit());
-        if(!File.Exists(receipt))throw new Exception("Компонент завершился без ответа. Проверь доступ к папке установки.");
+        var start=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),@"WindowsPowerShell\v1.0\powershell.exe"),"-NoProfile -STA -ExecutionPolicy Bypass -File "+Quote(Engine)+" -Action "+action+" -Root "+Quote(root)+" -Result "+Quote(receipt)+" "+extra){UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,WorkingDirectory=Environment.CurrentDirectory};
+        using(var p=Process.Start(start)){
+            var stderr=p.StandardError.ReadToEndAsync();
+            await Task.Run(()=>p.WaitForExit());
+            string error=await stderr;
+            if(!File.Exists(receipt)){
+                string folder=Path.Combine(root,"logs");
+                Directory.CreateDirectory(folder);
+                string log=Path.Combine(folder,DateTime.Now.ToString("yyyyMMdd-HHmmss-fff")+"-"+Path.GetFileNameWithoutExtension(receipt)+"-"+action+".log");
+                File.WriteAllText(log,"Action: "+action+Environment.NewLine+"Exit code: "+p.ExitCode+Environment.NewLine+error);
+                throw new Exception("Компонент завершился без ответа. Журнал: "+Path.GetFileName(log));
+            }
+        }
         var result=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(receipt));File.Delete(receipt);
-        if(result.ContainsKey("ok")&&Equals(result["ok"],false))throw new Exception((string)result["error"]);
+        if(result.ContainsKey("ok")&&Equals(result["ok"],false)){
+            object log;
+            string message=(string)result["error"];
+            if(result.TryGetValue("log",out log)&&log is string)message+=" Журнал: "+Path.GetFileName((string)log);
+            throw new Exception(message);
+        }
         return result;
     }
     T Get<T>(string name) where T:FrameworkElement{return (T)window.FindName(name);}
@@ -189,8 +204,9 @@ class Center {
         Bind("Rollback",async()=>{if(!Confirm("Вернуть предыдущую версию?","Окружение вернётся к предыдущему выпуску. Текущие личные настройки сохранятся.","Вернуть версию",false))return;await Rollback();});
         Bind("RestoreTaskbar",async()=>{await Run("RestoreTaskbar","");Say("Панель Windows показана. Чтобы оставить её, отключи скрытие в настройках.");});
         Bind("OpenBackups",()=>{string folder=Path.Combine(root,"backups");Directory.CreateDirectory(folder);Process.Start("explorer.exe",Quote(folder));return Task.FromResult(0);});
+        Bind("OpenLogs",()=>{string folder=Path.Combine(root,"logs");Directory.CreateDirectory(folder);Process.Start("explorer.exe",Quote(folder));return Task.FromResult(0);});
         Bind("Compare",Compare);
-        Bind("Uninstall",async()=>{if(!Confirm("Удалить Rose Pine Desktop?","Будут восстановлены исходные конфиги и системные настройки. Резервные копии и ранее установленные приложения сохранятся.","Удалить окружение",true))return;await Run("Uninstall","");dirty=false;hotkeysDirty=false;feed.Text=savedFeed;closingAllowed=true;string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller);window.Close();});
+        Bind("Uninstall",async()=>{if(!Confirm("Удалить Rose Pine Desktop?","Будут восстановлены исходные конфиги и системные настройки. Резервные копии и ранее установленные приложения сохранятся.","Удалить окружение",true))return;await Run("Uninstall","");dirty=false;hotkeysDirty=false;feed.Text=savedFeed;closingAllowed=true;string uninstaller=Path.Combine(root,"unins000.exe");if(File.Exists(uninstaller))Process.Start(uninstaller,"/LOG="+Quote(Path.Combine(root,"logs","uninstaller.log")));window.Close();});
         Get<Button>("Browse").Click+=(s,e)=>ChooseBrowser((Button)s);
         Get<Button>("PickSource").Click+=(s,e)=>{var dialog=new OpenFileDialog{Filter="Манифест выпуска (*.json)|*.json|Все файлы|*.*"};if(dialog.ShowDialog(window)==true)feed.Text=dialog.FileName;};
         foreach(var box in new[]{desktop,files,borders,palette,auto,hide,cursor,check})box.Click+=(s,e)=>Changed();

@@ -10,11 +10,35 @@ $ErrorActionPreference='Stop'
 $env:PSModulePath=(Join-Path $PSHOME 'Modules')+';'+$env:PSModulePath
 Set-StrictMode -Version 2
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+$operationStart=Get-Date
+$operationStage='initialize'
+$operationBackup=$null
+$operationVersion=$null
+$operationId=$operationStart.ToString('yyyyMMdd-HHmmss-fff')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8)
 function Read-Json($Path) { $data=ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($Path)); return $data }
 function Write-Json($Path,$Value) {
     [IO.Directory]::CreateDirectory((Split-Path $Path))|Out-Null
     $tmp=$Path+'.tmp'; [IO.File]::WriteAllText($tmp,(ConvertTo-Json -InputObject $Value -Depth 40),[Text.UTF8Encoding]::new($false))
     if(Test-Path -LiteralPath $Path){[IO.File]::Replace($tmp,$Path,$Path+'.previous');Remove-Item -LiteralPath ($Path+'.previous')}else{[IO.File]::Move($tmp,$Path)}
+}
+function Write-OperationResult($Receipt) {
+    if($Receipt['ok'] -eq $false -or $Action -in 'Install','Import','Apply','Check','Update','Rollback','Uninstall','RestoreTaskbar','Start'){
+        try {
+            $log=Join-Path $Root "logs\$operationId-$Action.json"
+            $entry=@{
+                action=$Action; stage=$operationStage; ok=($Receipt['ok'] -ne $false)
+                started=$operationStart.ToString('o'); finished=(Get-Date).ToString('o')
+                version=$operationVersion; backup=$operationBackup
+            }
+            foreach($key in 'version','error','detail','message','current','available','changed','backup'){
+                if($Receipt.ContainsKey($key)){$entry[$key]=$Receipt[$key]}
+            }
+            Write-Json $log $entry
+            $Receipt['log']=$log
+        } catch { Write-Verbose "Could not write operation log: $($_.Exception.Message)" }
+    }
+    if($Result){Write-Json $Result $Receipt}else{$Receipt|ConvertTo-Json -Depth 40}
 }
 function Hash($Path) { if(Test-Path -LiteralPath $Path -PathType Leaf){$stream=[IO.File]::OpenRead($Path);$sha=[Security.Cryptography.SHA256]::Create();try{([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose();$stream.Dispose()}}else{''} }
 function Bytes-Hash($Bytes) {if($null -eq $Bytes){return ''};$sha=[Security.Cryptography.SHA256]::Create();try{([BitConverter]::ToString($sha.ComputeHash($Bytes))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}}
@@ -56,7 +80,7 @@ function Default-Settings {
     if(!$MonitorCount){Add-Type -AssemblyName System.Windows.Forms; $script:MonitorCount=[Windows.Forms.Screen]::AllScreens.Count}
     $names='WEB','DEV','FILES','CHAT','TTRPG','MEDIA','VPN','DOUBLE','OTHER','OTHER'
     $spaces=@(for($i=0;$i -lt 10;$i++){[pscustomobject]@{name=[string](($i+1)%10);label=$names[$i];monitor=$(if($MonitorCount -gt 1 -and $i -ge 5){1}else{0})}})
-    [pscustomobject]@{components=@($Components.Split(',')|Where-Object{$_});autostart=$true;hideTaskbar=[bool]$HideTaskbar;cursor=[bool]$Cursor;browser='';workspaces=$spaces;feed='';checkAtLogon=$true}
+    [pscustomobject]@{components=@($Components.Split(',')|Where-Object{$_});autostart=$true;hideTaskbar=[bool]$HideTaskbar;cursor=[bool]$Cursor;browser='';workspaces=$spaces;feed='https://github.com/MJl2517/Windows10-tiling/releases/latest/download/release.json';checkAtLogon=$true}
 }
 function Packages($Payload,$Settings) {
     $deps=Read-Json (Join-Path $Payload 'dependencies.json'); $paths=@{}
@@ -257,15 +281,19 @@ function Pause-Services($Items,$Previous) {
     }catch{Resume-Services $restart;throw}
 }
 function Apply-Payload($Payload,$Settings,[switch]$ImportExisting) {
+    $script:operationStage='validate-release'
     $manifest=Read-Json (Join-Path $Payload 'release.json')
     if($manifest.version -notmatch '^\d+\.\d+\.\d+$' -or $manifest.schema -ne 1){throw 'Неподдерживаемый манифест выпуска'}
+    $script:operationVersion=$manifest.version
     if(!$Sandbox -and (![Environment]::Is64BitOperatingSystem -or [Environment]::OSVersion.Version.Build -lt 17763)){throw 'Требуется Windows 10 1809+ x64 или Windows 11 x64'}
+    $script:operationStage='prepare-dependencies'
     Ensure-WebView $Payload $Settings
     $paths=Packages $Payload $Settings
     $powerToys=Ensure-PowerToys $Payload $Settings
     if($powerToys){$paths['powertoys']=$powerToys}
     # Paths always exist for rendering; a disabled component has no files deployed.
     foreach($k in 'glazewm','zebar','yazi','alacritty','file'){if(!$paths[$k]){$paths[$k]=Join-Path $Root ('disabled\'+$k+'.exe')}}
+    $script:operationStage='prepare-config'
     $plan=Make-Plan $Payload $Settings $paths
     $previous=$null; if(Test-Path $stateFile){$previous=Read-Json $stateFile}
     $base=@{}; if($previous){foreach($f in $previous.files){$base[$f.target]=$f}}
@@ -286,7 +314,9 @@ function Apply-Payload($Payload,$Settings,[switch]$ImportExisting) {
         foreach($f in $previous.files){if(!$targets.ContainsKey($f.target) -and (Hash $f.target) -eq $f.after -and $initial.ContainsKey($f.target)){$b=$initial[$f.target];$bytes=if($b.exists){[IO.File]::ReadAllBytes($b.copy)}else{$null};$changes.Add([pscustomobject]@{target=$f.target;bytes=$bytes})}}
     }
     if($conflicts.Count){Write-Json (Join-Path $Root 'conflicts.json') $conflicts.ToArray();throw 'Обнаружены ручные изменения. Сравни файлы в разделе восстановления; обновление не применено.'}
+    $script:operationStage='backup'
     $backup=Join-Path $Root ('backups\'+(Get-Date -Format yyyyMMdd-HHmmss-fff)+'-'+[guid]::NewGuid().ToString('N').Substring(0,6));[IO.Directory]::CreateDirectory($backup)|Out-Null
+    $script:operationBackup=$backup
     $records=New-Object Collections.Generic.List[object]
     foreach($i in $changes){$record=File-Record $i.target $backup $records.Count;$record.after=Bytes-Hash $i.bytes;$records.Add($record)}
     $oldState=File-Record $stateFile $backup 'state';$oldSettings=File-Record $settingsPath $backup 'settings';$oldBaseline=File-Record (Join-Path $Root 'baseline.json') $backup 'baseline'
@@ -294,6 +324,7 @@ function Apply-Payload($Payload,$Settings,[switch]$ImportExisting) {
     $services=@()
     Write-Json (Join-Path $backup 'transaction.json') @{status='prepared';files=$records.ToArray();state=$oldState;settings=$oldSettings;baseline=$oldBaseline;system=$system;services=$services}
     try{
+        $script:operationStage='write-config'
         $services=@(Pause-Services $changes $previous)
         Write-Json (Join-Path $backup 'transaction.json') @{status='prepared';files=$records.ToArray();state=$oldState;settings=$oldSettings;baseline=$oldBaseline;system=$system;services=$services}
         Assert-Free $changes
@@ -306,6 +337,7 @@ function Apply-Payload($Payload,$Settings,[switch]$ImportExisting) {
         Write-Json $baseline $original
         Write-Json $settingsPath $Settings
         Write-Json $stateFile @{version=$manifest.version;payload=$Payload;files=$files;paths=$paths;previousBackup=$backup;installedAt=(Get-Date -Format o);imported=[bool]$ImportExisting;sandbox=[bool]$Sandbox;profile=$ProfileRoot}
+        $script:operationStage='activate-config'
         Configure-System $Settings $paths
         if(!$Sandbox -and 'desktop' -in $Settings.components -and (Get-Process glazewm -ErrorAction SilentlyContinue)){$reload=& $paths.glazewm command wm-reload-config|ConvertFrom-Json;if(!$reload.success){throw 'GlazeWM отклонил конфиг. Восстанавливаю предыдущую версию.'}}
         Resume-Services @($services|Where-Object{((Split-Path $_ -Leaf) -ne 'taskbar-toggle.exe' -or $Settings.hideTaskbar) -and ((Split-Path $_ -Leaf) -ne 'tacky-borders.exe' -or 'borders' -in $Settings.components) -and ((Split-Path $_ -Leaf) -ne 'zebar.exe' -or 'desktop' -in $Settings.components)}|ForEach-Object{if((Split-Path $_ -Leaf) -eq 'zebar.exe'){$paths['zebar']}else{$_}})
@@ -365,9 +397,18 @@ function Restore-Taskbar {
     if(Test-Path $helper){$p=Start-Process $helper '--restore' -WindowStyle Hidden -Wait -PassThru;if($p.ExitCode){throw 'Не удалось восстановить панель Windows'}}
 }
 function Get-Update($Settings) {
+    $script:operationStage='read-update-feed'
     if(!$Settings.feed){return @{available=$false;message='Источник обновлений не подключён';current=$(if(Test-Path $stateFile){(Read-Json $stateFile).version}else{'не установлено'})}}
     if([IO.Path]::IsPathRooted($Settings.feed)){$m=Read-Json $Settings.feed}
-    else{$u=[uri]$Settings.feed;if($u.Scheme -ne 'https'){throw 'Источник обновлений должен использовать HTTPS'};$m=Invoke-RestMethod -Uri $u -TimeoutSec 20}
+    else{
+        $u=[uri]$Settings.feed
+        if($u.Scheme -ne 'https'){throw 'Источник обновлений должен использовать HTTPS'}
+        $response=Invoke-WebRequest -Uri $u -UseBasicParsing -TimeoutSec 20
+        if($response.BaseResponse.ResponseUri.Scheme -ne 'https'){throw 'Небезопасное перенаправление манифеста'}
+        $content=$response.Content
+        if($content -is [byte[]]){$content=[Text.Encoding]::UTF8.GetString($content)}
+        $m=ConvertFrom-Json -InputObject $content
+    }
     if($m.schema -ne 1 -or $m.version -notmatch '^\d+\.\d+\.\d+$' -or $m.sha256 -notmatch '^[0-9a-fA-F]{64}$'){throw 'Некорректный манифест обновления'}
     if([IO.Path]::IsPathRooted($Settings.feed)){
         if(![IO.Path]::IsPathRooted($m.url) -and !([uri]$m.url).IsAbsoluteUri){$m.url=Join-Path (Split-Path $Settings.feed) $m.url}
@@ -378,6 +419,8 @@ function Get-Update($Settings) {
     @{available=([version]$m.version -gt [version]$current);current=$current;version=$m.version;notes=$m.notes;url=$m.url;sha256=$m.sha256;message=$(if([version]$m.version -gt [version]$current){'Доступно обновление'}else{'Установлена актуальная версия'})}
 }
 function Stage-Release($Zip,$Sha,$Version) {
+    $script:operationStage='download-release'
+    $script:operationVersion=$Version
     Download $Zip (Join-Path $Cache ('release-'+$Version+'.zip')) $Sha
     # Never trust or overwrite an existing release directory after an interrupted update.
     $dest=Under (Join-Path $Root 'versions') (Join-Path $Root ('versions\'+$Version+'-'+[guid]::NewGuid().ToString('N')))
@@ -422,6 +465,7 @@ try{
     $lock=$null;if($mutating){try{$lock=[IO.File]::Open((Join-Path $Root '.operation.lock'),'OpenOrCreate','ReadWrite','None')}catch{throw 'Другая операция уже выполняется'}}
     try{
         if($mutating){foreach($txFile in Get-ChildItem (Join-Path $Root 'backups') -Filter 'transaction.json' -Recurse -ErrorAction SilentlyContinue){$tx=Read-Json $txFile.FullName;if($tx.status -eq 'prepared'){Restore-Records $tx.files -RespectChanges;Restore-Records @($tx.state,$tx.settings,$tx.baseline);Restore-System $tx.system;if($tx.PSObject.Properties['services']){Resume-Services $tx.services};Write-Json $txFile.FullName @{status='recovered';files=$tx.files}}}}
+        $operationStage='dispatch'
         $answer=switch($Action){
             {$_ -in 'Install','Import'} {
                 if(!$Release){throw 'Не указан каталог выпуска'}
@@ -447,6 +491,7 @@ try{
             'RestoreTaskbar' {Restore-Taskbar;@{ok=$true;message='Панель Windows восстановлена'}}
             'Palette' {if('palette' -notin $settings.components){throw 'Включи компонент палитры PowerToys в центре управления'};if(!$Sandbox){if(!(Find-PowerToys)){throw 'PowerToys не найден. Повтори сохранение настроек'};if(!(Get-AppxPackage -Name Microsoft.CommandPalette)){throw 'Command Palette не зарегистрирована. Включи её в настройках PowerToys, затем повтори запуск.'};Start-Process $(if($PaletteSettings){'x-cmdpal://settings/'}else{'x-cmdpal://'})};@{ok=$true}}
             'Uninstall' {
+                $operationStage='restore-original'
                 $s=Read-Json $stateFile;$base=@(Read-Json (Join-Path $Root 'baseline.json'))
                 $hadWm=@($base|Where-Object{$_.target -eq (Join-Path $ProfileRoot '.glzr\glazewm\config.yaml') -and $_.exists}).Count -gt 0
                 $hadBar=@($base|Where-Object{$_.target -eq (Join-Path $ProfileRoot '.glzr\zebar\settings.json') -and $_.exists}).Count -gt 0
@@ -471,8 +516,10 @@ try{
             {$_ -in 'Files','Console'} {if('files' -notin $settings.components){throw 'Включи компонент Yazi и терминала в центре управления'};$s=Read-Json $stateFile;$args=@('--config-file',('"'+(Join-Path $Root 'config\alacritty.toml')+'"'),'--working-directory',('"'+(Get-Location).Path+'"'));if($Action -eq 'Console'){$args+=@('--title','PowerShell','-e',('"'+$env:WINDIR+'\System32\WindowsPowerShell\v1.0\powershell.exe"'),'-NoLogo')};Start-Process $s.paths.alacritty -ArgumentList $args;@{ok=$true}}
         }
     }finally{if($lock){$lock.Dispose()}}
-    if($Result){Write-Json $Result $answer}else{$answer|ConvertTo-Json -Depth 40}
+    $operationStage='complete'
+    Write-OperationResult $answer
 }catch{
     $failure=@{ok=$false;error=$_.Exception.Message;detail=$_.ScriptStackTrace}
-    if($Result){Write-Json $Result $failure}else{$failure|ConvertTo-Json -Depth 10};exit 1
+    Write-OperationResult $failure
+    exit 1
 }

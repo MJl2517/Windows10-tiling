@@ -79,8 +79,10 @@ export function RightGroup() {
     >
       <MetricsWidget />
       <KeyboardLayoutWidget />
-      <SystrayWidget tray={providers.tray} />
-      <button title="Центр управления Rose Pine Desktop" aria-label="Центр управления" style={{ color: "#c4a7e7", padding: "0 8px" }} onClick={() => void shellExec("@ROOT_F@/RosePineCenter.exe", [])}>◆</button>
+      <div class="inline-flex min-w-0 items-center gap-1">
+        <SystrayWidget tray={providers.tray} />
+        <button class="tray-control" title="Центр управления Rose Pine Desktop" aria-label="Центр управления" style={{ color: "var(--color-rose-pine-iris)" }} onClick={() => void shellExec("@ROOT_F@/RosePineCenter.exe", [])}>◆</button>
+      </div>
       <DateTimeWidget />
     </Group>
   );

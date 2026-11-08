@@ -27,6 +27,8 @@ WizardStyle=modern
 UninstallDisplayIcon={app}\RosePineCenter.exe
 CloseApplications=no
 RestartApplications=no
+SetupLogging=yes
+UninstallLogging=yes
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 [Types]
@@ -65,13 +67,13 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if (CurStep = ssPostInstall) and not InstallRuntime() then
-    RaiseException('Настройка не завершена. Подробности в setup-result.json в папке RosePineDesktop. Исходные конфиги сохранены.');
+    RaiseException('Настройка не завершена. Проверьте setup-result.json и папку logs в каталоге RosePineDesktop. Журнал установщика сохраняется в %TEMP%.');
 end;
 function InitializeUninstall(): Boolean;
 var Code: Integer;
 begin
   Result := True;
   if FileExists(ExpandConstant('{app}\installed.json')) then
-    Result := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\versions\{#ReleaseVersion}\Desktop.ps1') + '" -Action Uninstall -Root "' + ExpandConstant('{app}') + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0);
-  if not Result then MsgBox('Сначала закрой компоненты окружения и повтори удаление. Конфиги сохранены.', mbInformation, MB_OK);
+    Result := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), '-NoProfile -STA -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\versions\{#ReleaseVersion}\Desktop.ps1') + '" -Action Uninstall -Root "' + ExpandConstant('{app}') + '" -Result "' + ExpandConstant('{app}\uninstall-result.json') + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0);
+  if not Result then MsgBox('Удаление не завершено. Проверьте uninstall-result.json и папку logs в каталоге RosePineDesktop.', mbInformation, MB_OK);
 end;

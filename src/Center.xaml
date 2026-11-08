@@ -127,6 +127,7 @@
         <TabItem Header="Восстановление">
           <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="0,0,8,12">
             <TextBlock Text="Восстановление" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="Проверка файлов, резервные копии и возврат изменений." Style="{StaticResource Hint}" Margin="0,7,0,24"/>
+            <Button x:Name="OpenLogs" Content="Открыть журналы…" HorizontalAlignment="Left" Margin="0,0,0,12"/>
             <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Файлы компонентов" Style="{StaticResource Heading}"/><TextBlock x:Name="Health" Text="Проверка ещё не выполнялась" Foreground="#9ccfd8" Margin="0,0,0,10"/><WrapPanel><Button x:Name="CheckHealth" Content="Проверить файлы"/><Button x:Name="RestoreTaskbar" Content="Вернуть панель Windows"/></WrapPanel></StackPanel></Border>
             <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Резервные копии и откат" Style="{StaticResource Heading}"/><TextBlock Text="Копия создаётся перед изменениями. Откат возвращает предыдущую версию окружения и сохраняет текущие личные настройки." Style="{StaticResource Hint}" Margin="0,0,0,12"/>
               <TextBlock x:Name="BackupsEmpty" Text="Резервных копий пока нет" Style="{StaticResource Hint}"/><ListBox x:Name="Backups" MaxHeight="140" AutomationProperties.Name="Резервные копии"/>

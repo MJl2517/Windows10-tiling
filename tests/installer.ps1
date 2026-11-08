@@ -11,6 +11,9 @@ $arguments=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="'+$testRoot+
 foreach($i in 1,2){$p=Start-Process "$Repo\dist\RosePineDesktop-TestSetup-$version.exe" -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru;if($p.ExitCode){throw "Installer failed: $($p.ExitCode)"};$result=Get-Content "$testRoot\setup-result.json" -Raw|ConvertFrom-Json;if(!$result.ok){throw 'Setup receipt failed'}}
 $p=Start-Process "$testRoot\unins000.exe" -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/LOG="'+$Repo+'\build\uninstall-test.log"')) -WindowStyle Hidden -Wait -PassThru
 if($p.ExitCode -or (Test-Path "$testRoot\installed.json")){throw 'Uninstaller failed'}
+$receipt=Get-Content "$testRoot\uninstall-result.json" -Raw|ConvertFrom-Json
+if(!$receipt.ok -or !(Test-Path -LiteralPath $receipt.log)){throw 'Uninstaller did not save its operation log'}
+if(!(Test-Path "$Repo\build\installer-test.log") -or !(Test-Path "$Repo\build\uninstall-test.log")){throw 'Missing Inno Setup log'}
 $realAfter=if(Test-Path $realKey){(Get-ItemProperty $realKey).InstallLocation}else{''}
 if($realBefore -ne $realAfter){throw 'Test modified the real installation registration'}
 @{ok=$true;install=$true;reinstall=$true;uninstall=$true;realRegistrationPreserved=$true}|ConvertTo-Json|Set-Content "$Repo\test-results\installer-check.json" -Encoding UTF8
